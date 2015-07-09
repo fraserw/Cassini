@@ -68,7 +68,7 @@ def water(wave,spec,returnSpec=False):
 
     wf1=num.where((wave>=1.48)&(wave<=1.55))
     wf2=num.where((wave>=1.95)&(wave<=2.05))
-    wf3=num.where((wave>=2.75)&(wave<=3.27))
+    wf3=num.where((wave>=2.8)&(wave<=3.03))
 
     c1=f(num.nanmedian(wave[wf1]))
     c2=f(num.nanmedian(wave[wf2]))
