@@ -29,7 +29,7 @@ def MJD(x):
 
 def pixLatLong(image):
 
-    with pyf.open(image+'.fits') as han:
+    with pyf.open(image+'.fits',ignore_missing_end=True) as han:
         data=han[0].data
 
     (C,A,B)=data.shape
@@ -108,13 +108,14 @@ def pixLatLong(image):
                             else:   
                                 dic[l]=cutter(output[k])
                 print '\n\n\n'
+            #print dic
             outObj[i].append(dic.copy())
     return outObj
 
 if __name__=="__main__":
     import pickle as pick,pylab as pyl,numpy as num,os
     from lineFitUtils import poly
-    fn='cv1465664774_1'
+    fn='cv1465671593_1'
     image=fn+'_ir'
     dir='2004163T121836_2004163T192848'
     #os.chdir(dir)

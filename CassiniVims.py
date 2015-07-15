@@ -28,7 +28,7 @@ def findPhoebeCubes(dir):
     else:
         return cubes
 
-def preprocCubes(cubeName,procDir='/Volumes/data/VIMS/covims_0004/procdata'):
+def preprocCubes(cubeName,procDir='/data/VIMS/covims_0004/procdata'):
     if not os.path.exists(procDir):
         os.system('mkdir %s'%(procDir))
 
@@ -93,7 +93,7 @@ def preprocCubes(cubeName,procDir='/Volumes/data/VIMS/covims_0004/procdata'):
     return log
 
 
-def genFitsMeans(cubeName,procDir='/Volumes/data/VIMS/covims_0004/procdata'):
+def genFitsMeans(cubeName,procDir='/data/VIMS/covims_0004/procdata'):
     log={}
     cwd=os.getcwd()
 
@@ -129,7 +129,7 @@ def genFitsMeans(cubeName,procDir='/Volumes/data/VIMS/covims_0004/procdata'):
     os.chdir(cwd)
 
     
-def convert2Fits(cubeName,procDir='/Volumes/data/VIMS/covims_0004/procdata'):
+def convert2Fits(cubeName,procDir='/data/VIMS/covims_0004/procdata'):
     log={}
     cwd=os.getcwd()
 
@@ -157,7 +157,7 @@ def convert2Fits(cubeName,procDir='/Volumes/data/VIMS/covims_0004/procdata'):
     os.chdir(cwd)
     return log
 
-def getCamStats(cubeName,procDir='/Volumes/data/VIMS/covims_0004/procdata'):
+def getCamStats(cubeName,procDir='/data/VIMS/covims_0004/procdata'):
     log={}
     cwd=os.getcwd()
 
@@ -181,7 +181,7 @@ def getCamStats(cubeName,procDir='/Volumes/data/VIMS/covims_0004/procdata'):
 
     return log
 
-def getCamInfo(cubeName,procDir='/Volumes/data/VIMS/covims_0004/procdata'):
+def getCamInfo(cubeName,procDir='/data/VIMS/covims_0004/procdata'):
     log={}
     cwd=os.getcwd()
 
@@ -239,7 +239,7 @@ def parseLog(x):
 def parseCamStatsLog():
     camStatsIR=[]
     camStatsVis=[]
-    with open('/Volumes/data/VIMS/covims_0004/procdata/camStats.log') as logHan:
+    with open('/data/VIMS/covims_0004/procdata/camStats.log') as logHan:
         log=logHan.readlines()
         for i in range(len(log)):
             if '/' in log[i] and '_' in log[i]:
@@ -278,7 +278,7 @@ def parseCamInfoLog():
     
     camInfoIR=[]
     camInfoVis=[]
-    with open('/Volumes/data/VIMS/covims_0004/procdata/camInfo.log') as logHan:
+    with open('/data/VIMS/covims_0004/procdata/camInfo.log') as logHan:
         log=logHan.readlines()
 
     for i in range(len(log)):
@@ -338,8 +338,8 @@ if __name__=="__main__":
     #run this from the covims data directory!
     #/Volumes/data/VIMS/covims_0004/data  
 
-    if os.getcwd()<>'/Volumes/data/VIMS/covims_0004/data':
-        print 'This needs to be run in /Volumes/data/VIMS/covims_0004/data ONLY!'
+    if os.getcwd()<>'/data/VIMS/covims_0004/data':
+        print 'This needs to be run in /data/VIMS/covims_0004/data ONLY!'
         sys.exit()
         
         
@@ -354,7 +354,7 @@ if __name__=="__main__":
 
     """
     #pre processing all Phoebe data
-    cubeProcLog=open('/Volumes/data/VIMS/covims_0004/procdata/cubeProc.log','w+')    
+    cubeProcLog=open('/data/VIMS/covims_0004/procdata/cubeProc.log','w+')    
 
     for i in range(len(cubes)):
         log=preprocCubes(cubes[i])
@@ -367,7 +367,7 @@ if __name__=="__main__":
 
                 
     #convert to fits
-    cubeProcLog=open('/Volumes/data/VIMS/covims_0004/procdata/cubeProc.log','a+')
+    cubeProcLog=open('/data/VIMS/covims_0004/procdata/cubeProc.log','a+')
     print >> cubeProcLog
     for i in range(len(cubes)):
         log=convert2Fits(cubes[i])
@@ -376,17 +376,18 @@ if __name__=="__main__":
             print >>cubeProcLog
     cubeProcLog.close()
 
-
+    """
     #gen fits means
     for i in range(len(cubes)):
         genFitsMeans(cubes[i])
-
+    sys.exit()
+    """
 
         
 
     #####NO LONGER USED
     #create the camstats log
-    camStatLog=open('/Volumes/data/VIMS/covims_0004/procdata/camStats.log','w+')
+    camStatLog=open('/data/VIMS/covims_0004/procdata/camStats.log','w+')
     for i in range(len(cubes)):
         log=getCamStats(cubes[i])
         print >> camStatLog,log[0]
@@ -398,7 +399,7 @@ if __name__=="__main__":
 
     #parse the camera statistics output
     (camStatsVis,camStatsIR)=parseCamStatsLog()
-    camStatPickle=open('/Volumes/data/VIMS/covims_0004/procdata/camStats.pick','w+')
+    camStatPickle=open('/data/VIMS/covims_0004/procdata/camStats.pick','w+')
     pick.dump([camStatsVis,camStatsIR],camStatPickle)
     camStatPickle.close()
     ######
@@ -407,7 +408,7 @@ if __name__=="__main__":
     
     
     #create the camInfo log
-    camInfoLog=open('/Volumes/data/VIMS/covims_0004/procdata/camInfo.log','w+')
+    camInfoLog=open('/data/VIMS/covims_0004/procdata/camInfo.log','w+')
     visObj=[]
     IRObj=[]
     for i in range(len(cubes)):
@@ -442,20 +443,20 @@ if __name__=="__main__":
             print >> camInfoLog,log[2][j],
         print >> camInfoLog,'\n\n'
     camInfoLog.close()
-    camInfoPickle=open('/Volumes/data/VIMS/covims_0004/procdata/camInfo.pick','w+')
+    camInfoPickle=open('/data/VIMS/covims_0004/procdata/camInfo.pick','w+')
     pick.dump([visObj,IRObj],camInfoPickle)
     camInfoPickle.close()
     """
     
     ###parse the camera info output
     #(camInfoVis,camInfoIR)=parseCamInfoLog()
-    #camInfoPickle=open('/Volumes/data/VIMS/covims_0004/procdata/camInfo.pick','w+')
+    #camInfoPickle=open('/data/VIMS/covims_0004/procdata/camInfo.pick','w+')
     #pick.dump([camInfoVis,camInfoIR],camInfoPickle)
     #camInfoPickle.close()
 
     
                     
-    with open('/Volumes/data/VIMS/covims_0004/procdata/camInfo.pick') as camInfoPick:
+    with open('/data/VIMS/covims_0004/procdata/camInfo.pick') as camInfoPick:
         [camInfoVis,camInfoIR]=pick.load(camInfoPick)
 
     o=[]

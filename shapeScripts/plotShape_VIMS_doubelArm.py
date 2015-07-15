@@ -42,17 +42,17 @@ def getPars(fn):
     return (vc,vi,oxv,oyv,oxi,oyi,dn)
 
 
-def callShapeGen(r,vertices,vertIndices,ps_vis,ps_ir,inot,jnot,dXV,dYV,dZV,dXI,dYI,dZI,Ls,ls,pTimesV,pTimesI,imData):
+def callShapeGen(r,vertices,vertIndices,ps_vis,ps_ir,inot,jnot,dXV,dYV,dZV,dXI,dYI,dZI,Ls,ls,pTimesV,pTimesI,imData,az_adjust=0.0):
     global steps
     steps+=1
     print steps,
 
     (L_o_n,l_o_n,A_o_n,L_s,l_s,A_s,dn,oxv,oyv,oxi,oyi,ov,ova)=r
 
-    if abs(oxv)>900. or abs(oyv)>900. or oxv==num.inf or oxv==-num.inf or oyv==num.inf or oyv==-num.inf:
+    if abs(oxv)>1200. or abs(oyv)>1200. or oxv==num.inf or oxv==-num.inf or oyv==num.inf or oyv==-num.inf:
         #print oxv,oyv
         return -num.inf
-    if abs(oxi)>900. or abs(oyi)>900. or oxi==num.inf or oxi==-num.inf or oyi==num.inf or oyi==-num.inf:
+    if abs(oxi)>1200. or abs(oyi)>1200. or oxi==num.inf or oxi==-num.inf or oyi==num.inf or oyi==-num.inf:
         #print oxi,oyi
         return -num.inf
     if  dn<0 or ov<0 or ov>5 or ova<0 or ova>=360. or dn<0:
@@ -77,7 +77,7 @@ def callShapeGen(r,vertices,vertIndices,ps_vis,ps_ir,inot,jnot,dXV,dYV,dZV,dXI,d
                                                         dXV,dYV,dZV,
                                                         lons,lats,
                                                         pTimesV,
-                                                        imData[0],vis=True,mask=imData[2])
+                                                        imData[0],vis=True,mask=imData[2],az_adjust=az_adjust)
     (imageIR,poly3d,colours,rot_vert,vertsInPixelIR,chiIR) =shapeGen_VIMS(vertices,vertIndices,
                                                         L_o_n,l_o_n,A_o_n,
                                                         L_s,l_s,A_s,
@@ -88,22 +88,22 @@ def callShapeGen(r,vertices,vertIndices,ps_vis,ps_ir,inot,jnot,dXV,dYV,dZV,dXI,d
                                                         dXI,dYI,dZI,
                                                         lons,lats,
                                                         pTimesI,
-                                                        imData[1])
+                                                        imData[1],az_adjust=az_adjust)
   
     print '  ',(chiVis+chiIR)*0.5,'\n'
     return 0.5*(chiVis+chiIR)
 
 
-def callShapeGenNoVel(r,vertices,vertIndices,ov,ova,ps_vis,ps_ir,inot,jnot,dXV,dYV,dZV,dXI,dYI,dZI,Ls,ls,pTimesV,pTimesI,imData):
+def callShapeGenNoVel(r,vertices,vertIndices,ov,ova,ps_vis,ps_ir,inot,jnot,dXV,dYV,dZV,dXI,dYI,dZI,Ls,ls,pTimesV,pTimesI,imData,az_adjust=-90):
     global steps
     steps+=1
     print steps,
 
     (L_o_n,l_o_n,A_o_n,L_s,l_s,A_s,dn,oxv,oyv,oxi,oyi)=r
 
-    if abs(oxv)>900. or abs(oyv)>900. or oxv==num.inf or oxv==-num.inf or oyv==num.inf or oyv==-num.inf:
+    if abs(oxv)>1200. or abs(oyv)>1200. or oxv==num.inf or oxv==-num.inf or oyv==num.inf or oyv==-num.inf:
         return -num.inf
-    if abs(oxi)>900. or abs(oyi)>900. or oxi==num.inf or oxi==-num.inf or oyi==num.inf or oyi==-num.inf:
+    if abs(oxi)>1200. or abs(oyi)>1200. or oxi==num.inf or oxi==-num.inf or oyi==num.inf or oyi==-num.inf:
         return -num.inf
     if  dn<0 or ov<0 or ov>5 or ova<0 or ova>360. or dn<0:
         return -num.inf
@@ -125,7 +125,7 @@ def callShapeGenNoVel(r,vertices,vertIndices,ov,ova,ps_vis,ps_ir,inot,jnot,dXV,d
                                                         dXV,dYV,dZV,
                                                         lons,lats,
                                                         pTimesV,
-                                                        imData[0],vis=True,mask=imData[2])
+                                                        imData[0],vis=True,mask=imData[2],az_adjust=az_adjust)
     (imageIR,poly3d,colours,rot_vert,vertsInPixelIR,chiIR) =shapeGen_VIMS(vertices,vertIndices,
                                                         L_o_n,l_o_n,A_o_n,
                                                         L_s,l_s,A_s,
@@ -136,7 +136,7 @@ def callShapeGenNoVel(r,vertices,vertIndices,ov,ova,ps_vis,ps_ir,inot,jnot,dXV,d
                                                         dXI,dYI,dZI,
                                                         lons,lats,
                                                         pTimesI,
-                                                        imData[1])
+                                                        imData[1],az_adjust=az_adjust)
   
     print '  ',(chiVis+chiIR)*0.5,'\n'
     return 0.5*(chiVis+chiIR)
@@ -147,8 +147,9 @@ def callShapeGenNoVel(r,vertices,vertIndices,ov,ova,ps_vis,ps_ir,inot,jnot,dXV,d
 
 ####data input
 
-#imageName='2004163T121836_2004163T192848/cv1465670650_1'
-imageName='2004163T193015_2004164T051726/cv1465678911_1'
+#fitting 69068 and 67721
+imageName='2004163T121836_2004163T192848/cv1465667721_1'
+#imageName='2004163T193015_2004164T051726/cv1465677443_1'
 
 if len(sys.argv)>1:
     imageName=sys.argv[1]
@@ -159,7 +160,7 @@ print imageName
 print
 
 
-(visDataMin,IRDataMin,oxv,oyv,oxi,oyi,distancenot)=getPars('/Users/fraserw/data/VIMS/covims_0004/procdata/%s.parFile'%(imageName))
+(visDataMin,IRDataMin,oxv,oyv,oxi,oyi,distancenot)=getPars('/data/VIMS/covims_0004/procdata/%s.parFile'%(imageName))
 offsetsVis=num.array([oxv,oyv])
 offsetsIR=num.array([oxi,oyi])
 
@@ -169,23 +170,25 @@ showSurface=True
 showSources=True
 showNormals=True
 plotUpdate=False
-alpha=0.2
-loadBestPoint=True
-doFitsVel=False
+alpha=0.7
+loadBestPoint=False
+doFitsVel=True
 doFitsNoVel=False
 doRandomVel=False
-produceMaps=True
+produceMaps=False
 findRoughOffsets=False
+exitAfterFit=False
 
 if len(sys.argv)>1:
-    doRandomVel=True
-    loadBestPoint=True
+    doRandomVel=False
+    loadBestPoint=False
     doFitsVel=False
+    exitAfterFit=True
     
-with pyf.open('/Users/fraserw/data/VIMS/covims_0004/procdata/%s_vis_mean_strpd.fits'%(imageName)) as han:
+with pyf.open('/data/VIMS/covims_0004/procdata/%s_vis_mean_strpd.fits'%(imageName)) as han:
     imDataVis=han[0].data
 
-with pyf.open('/Users/fraserw/data/VIMS/covims_0004/procdata/%s_vis_mean_strpd_bpmap.fits'%(imageName)) as han:
+with pyf.open('/data/VIMS/covims_0004/procdata/%s_vis_mean_strpd_bpmap.fits'%(imageName)) as han:
     maskVis=han[0].data
 imDataVis*=maskVis
 
@@ -202,7 +205,7 @@ imDataVis[w]=256.
 W=num.where(imDataVis<256.)
 imDataVis[W]=0.0
 
-with pyf.open('/Users/fraserw/data/VIMS/covims_0004/procdata/%s_ir_mean.fits'%(imageName)) as han:
+with pyf.open('/data/VIMS/covims_0004/procdata/%s_ir_mean.fits'%(imageName)) as han:
     imDataIR=han[0].data
 
 
@@ -219,8 +222,13 @@ imDataIR[w]=256.
 W=num.where(imDataIR<256.)
 imDataIR[W]=0.0
 
+
+###hack to test out if 8419 needs to have it's corners swapped, or if it truly is a solar azimuth issue
+#imDataVis=imDataVis[::-1,::-1]
+#imDataIR=imDataIR[::-1,::-1]
+
 ###hack to handle the shadow on Jason
-if imageName=='2004163T121836_2004163T192848/cv1465669944_1':
+if imageName=='2004163T121836_2004163T192848/cv1465665563_1':
     imDataVis[1:13,10:15]=256.
     imDataIR[9:15,8:12]=256.
 
@@ -229,10 +237,10 @@ imData=num.concatenate([[imDataVis],[imDataIR],[maskVis]])
 (dump,A,B)=imData.shape
 
 
-with open('/Users/fraserw/data/VIMS/covims_0004/procdata/%s_vis.campt.pickle'%(imageName)) as han:
+with open('/data/VIMS/covims_0004/procdata/%s_vis.campt.pickle'%(imageName)) as han:
     latLongObjVis=pick.load(han)
 
-with open('/Users/fraserw/data/VIMS/covims_0004/procdata/%s_ir.campt.pickle'%(imageName)) as han:
+with open('/data/VIMS/covims_0004/procdata/%s_ir.campt.pickle'%(imageName)) as han:
     latLongObjIR=pick.load(han)
 
 
@@ -245,7 +253,7 @@ if not doFitsVel and not doFitsNoVel:
 else:
     x=1
 n=(64*x)+1
-with open('/Volumes/data/PhoebeShapeModel/CO_SA_ISSNA_5_PHOEBESHAPE_V2_0/data/phoebe_ver%sq.tab'%(n-1)) as han:
+with open('/data/PhoebeShapeModel/CO_SA_ISSNA_5_PHOEBESHAPE_V2_0/data/phoebe_ver%sq.tab'%(n-1)) as han:
     data=han.readlines()
 
 vertices=[]
@@ -376,6 +384,7 @@ lat_s=latLongObjIR[inot][jnot]['SubSolarLatitude']
 az_s=latLongObjIR[inot][jnot]['SubSolarAzimuth']
 
 
+
 #velocities
 #offsetsVis=num.array([104.,291.]) #shift in vertical, shift in horizontal
 #offsetsIR=num.array([112.,167.]) #shift in vertical, shift in horizontal
@@ -384,11 +393,17 @@ offsetVel=0.0 #km/s
 #270 is an expansion in horizontal, 90 is a contraction in horizontal
 offsetVelAngle=270.0 #avoid starting this near 0.
 
+#hacks
+#if az_s<151.:
+#    az_s=168.
+#if az_o_not>90. or az_o_not==0:
+#    az_o_not=56.
 
+"""
 #hack corrections to the shiity angles
 if imageName=='2004163T121836_2004163T192848/cv1465669068_1':
     az_s-=115.
-elif imageName=='2004163T121836_2004163T192848/cv1465670650_1':
+elif imageName in ['2004163T121836_2004163T192848/cv1465670650_1','2004163T121836_2004163T192848/cv1465650234_1','2004163T121836_2004163T192848/cv1465649834_1','2004163T121836_2004163T192848/cv1465649433_1']:
     az_s-=60.
 elif imageName=='2004163T121836_2004163T192848/cv1465665771_1':
     az_s-=20.
@@ -397,7 +412,12 @@ elif imageName in ['2004163T121836_2004163T192848/cv1465669944_1','2004163T12183
     az_s-=80.
 elif imageName in ['2004163T193015_2004164T051726/cv1465678419_1','2004163T193015_2004164T051726/cv1465677670_1','2004163T193015_2004164T051726/cv1465679413_1','2004163T193015_2004164T051726/cv1465679675_1','2004163T193015_2004164T051726/cv1465680977_2','2004163T193015_2004164T051726/cv1465680977_5']:
     az_s-=160
+elif imageName in ['2004163T121836_2004163T192848/cv1465651001_1','2004163T121836_2004163T192848/cv1465651336_1','2004163T121836_2004163T192848/cv1465651734_1','2004163T121836_2004163T192848/cv1465651857_1','2004163T121836_2004163T192848/cv1465650070_1','2004163T121836_2004163T192848/cv1465649979_1','2004163T121836_2004163T192848/cv1465649746_1','2004163T121836_2004163T192848/cv1465650834_1','2004163T121836_2004163T192848/cv1465650745_1']:
+    az_s+=90.
+elif imageName in ['2004163T193015_2004164T051726/cv1465679932_1','2004163T193015_2004164T051726/cv1465677443_1']:
+    az_s-=180
 az_s=az_s%360.
+"""
 print "Spice Kernel based angles:"
 print long_o_not,lat_o_not,az_o_not
 print long_s,lat_s,az_s
@@ -467,7 +487,7 @@ if doFitsVel:
     r0=num.array(r0)
 
         
-    sampler = emcee.EnsembleSampler(nWalkers, nDim, callShapeGen, args=[vertices,vertIndices,pixScaleVis,pixScaleIR,inot,jnot,deltaXVis,deltaYVis,deltaZVis,deltaXIR,deltaYIR,deltaZIR,lons,lats,pixelTimesVis,pixelTimesIR,imData])
+    sampler = emcee.EnsembleSampler(nWalkers, nDim, callShapeGen, args=[vertices,vertIndices,pixScaleVis,pixScaleIR,inot,jnot,deltaXVis,deltaYVis,deltaZVis,deltaXIR,deltaYIR,deltaZIR,lons,lats,pixelTimesVis,pixelTimesIR,imData,-90])
 
     pos, prob, state = sampler.run_mcmc(r0, nBurn)
 
@@ -478,15 +498,16 @@ if doFitsVel:
     samps=sampler.chain
     probs=sampler.lnprobability
 
-    with open('/Users/fraserw/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName),'w+') as outHan:
+    with open('/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName),'w+') as outHan:
         pick.dump([samps,probs],outHan)
     
     print sampler.chain
     print
     print sampler.lnprobability
 
-    (bestPoint,goodSamps)=getFit('/Users/fraserw/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName))
-
+    (bestPoint,goodSamps)=getFit('/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName))
+    print bestPoint
+    if exitAfterFit: sys.exit()
 
 if doFitsNoVel:
     x,y=0.,0.
@@ -497,9 +518,8 @@ if doFitsNoVel:
     nStep=30
 
     steps=0
-    offWidth=pixScaleIR*distancenot/1000.*2.5
+    offWidth=20.
     angWidth=10.
-    velWidth=0.1
     distanceWidth=distancenot*0.1
     
     r0=[]
@@ -524,45 +544,16 @@ if doFitsNoVel:
     samps=sampler.chain
     probs=sampler.lnprobability
 
-    with open('/Users/fraserw/data/VIMS/covims_0004/procdata/%s.noVel_fit_pickle'%(imageName),'w+') as outHan:
+    with open('/data/VIMS/covims_0004/procdata/%s.noVel_fit_pickle'%(imageName),'w+') as outHan:
         pick.dump([samps,probs],outHan)
     
     print sampler.chain
     print
     print sampler.lnprobability
 
-    (bestPoint,goodSamps)=getFit('/Users/fraserw/data/VIMS/covims_0004/procdata/%s.noVel_fit_pickle'%(imageName))
-    """
-    (Y,X)=probs.shape
-    goodSamps=[]
-    for i in range(Y):
-        for j in range(int(X*0.5),X):
-            xx=[]
-            for k in range(nDim):
-                xx.append(samps[i,j][k])
-            xx.append(probs[i,j])
-            goodSamps.append(xx[:])
-            #goodSamps.append([samps[i,j][0],
-            #                  samps[i,j][1],
-            #                  samps[i,j][2],
-            #                  samps[i,j][3],
-            #                  samps[i,j][4],
-            #                  samps[i,j][5],
-            #                  samps[i,j][6],
-            #                  samps[i,j][7],
-            #                  samps[i,j][8],
-            #                  probs[i,j]])
-    goodSamps=num.array(goodSamps)
-    (l,ll)=goodSamps.shape
-    args=num.argsort(goodSamps[:,ll-1])
-    goodSamps=goodSamps[args]
-    
-    print 'Best Point: ',bestPoint
-    print callShapeGenNoVel(goodSamps[l-1][:ll-1],vertices,vertIndices,pixScaleVis,pixScaleIR,inot,jnot,deltaXVis,deltaYVis,deltaZVis,deltaXIR,deltaYIR,deltaZIR,lons,lats,pixelTimesVis,pixelTimesIR,imData)
-    [long_o_not,lat_o_not,az_o_not,long_s,lat_s,az_s,distancenot,offXV,offYV,offXI,offYI,offsetVel,offsetVelAngle,chi]=goodSamps[l-1]
-    #sys.exit()
-    """
-    
+    (bestPoint,goodSamps)=getFit('/data/VIMS/covims_0004/procdata/%s.noVel_fit_pickle'%(imageName))
+    print bestPoint
+
 
 
 
@@ -583,7 +574,7 @@ if doRandomVel:
     print 'Doing random sampling'
     nRand=8000
     steps=0
-    (bestPoint,goodSamps)=getFit('/Users/fraserw/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName))
+    (bestPoint,goodSamps)=getFit('/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName))
     bestPoint[len(bestPoint)-1]=callShapeGen(bestPoint[:len(bestPoint)-1],vertices,vertIndices,pixScaleVis,pixScaleIR,inot,jnot,deltaXVis,deltaYVis,deltaZVis,deltaXIR,deltaYIR,deltaZIR,lons,lats,pixelTimesVis,pixelTimesIR,imData)
     (ll,l)=goodSamps.shape
     print 'Finding better fits than '+str(bestPoint[len(bestPoint)-1])
@@ -602,7 +593,7 @@ if doRandomVel:
     for i in range(nRand):
         chi=callShapeGen(r0[i],vertices,vertIndices,pixScaleVis,pixScaleIR,inot,jnot,deltaXVis,deltaYVis,deltaZVis,deltaXIR,deltaYIR,deltaZIR,lons,lats,pixelTimesVis,pixelTimesIR,imData)
         if chi>=bestPoint[len(bestPoint)-1]:
-            with open('/Users/fraserw/data/VIMS/covims_0004/procdata/%s.rand'%(imageName),'a+') as handle:
+            with open('/data/VIMS/covims_0004/procdata/%s.rand'%(imageName),'a+') as handle:
                 print >>handle,r0[i],chi
                 print '****'
                 print
@@ -611,13 +602,14 @@ if doRandomVel:
 if loadBestPoint:# and imageName<>'2004163T193015_2004164T051726/cv1465680977_5':
 
     steps=0
-    (bestPoint,goodSamps)=getFit('/Users/fraserw/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName))
+    (bestPoint,goodSamps)=getFit('/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName))
+    print bestPoint
     [long_o_not,lat_o_not,az_o_not,long_s,lat_s,az_s,distancenot,offXV,offYV,offXI,offYI,offsetVel,offsetVelAngle,chi]=bestPoint
     chi=callShapeGen(bestPoint[:len(bestPoint)-1],vertices,vertIndices,pixScaleVis,pixScaleIR,inot,jnot,deltaXVis,deltaYVis,deltaZVis,deltaXIR,deltaYIR,deltaZIR,lons,lats,pixelTimesVis,pixelTimesIR,imData)
     print 'EMCEE best chi:',chi
 
-    if os.path.isfile('/Users/fraserw/data/VIMS/covims_0004/procdata/%s.rand'%(imageName)):
-        with open('/Users/fraserw/data/VIMS/covims_0004/procdata/%s.rand'%(imageName)) as randHan:
+    if os.path.isfile('/data/VIMS/covims_0004/procdata/%s.rand'%(imageName)):
+        with open('/data/VIMS/covims_0004/procdata/%s.rand'%(imageName)) as randHan:
             randoms=randHan.readlines()
         for i in range(0,len(randoms),4):
             s=''
@@ -646,7 +638,7 @@ elif loadBestPoint:
     offsetsIR =num.array([offXI,offYI])
 """
     
-(imageVis,poly3d,colours,rot_vert,vertsInPixelVis,chi)=shapeGen_VIMS(vertices,vertIndices,
+(imageVis,poly3d_r,colours,rot_vert,vertsInPixelVis,chi)=shapeGen_VIMS(vertices,vertIndices,
                                                     long_o_not,lat_o_not,az_o_not,
                                                     long_s,lat_s,az_s,
                                                     distancenot,
@@ -657,6 +649,17 @@ elif loadBestPoint:
                                                     lons,lats,
                                                     pixelTimesVis,
                                                     imData[0],vis=True,mask=imData[2])
+(imageVis,poly3d,colours,rot_vert,vertsInPixelVis,chi)=shapeGen_VIMS(vertices,vertIndices,
+                                                    long_o_not,lat_o_not,az_o_not,
+                                                    long_s,lat_s,az_s,
+                                                    distancenot,
+                                                    offsetsVis, offsetVel,offsetVelAngle,
+                                                    pixScaleVis,
+                                                    inot,jnot,
+                                                    deltaXVis,deltaYVis,deltaZVis,
+                                                    lons,lats,
+                                                    pixelTimesVis,
+                                                    imData[0],vis=True,mask=imData[2],az_adjust=-90)
 (imageIR,poly3d,colours,rot_vert,vertsInPixelIR,chi)=shapeGen_VIMS(vertices,vertIndices,
                                                     long_o_not,lat_o_not,az_o_not,
                                                     long_s,lat_s,az_s,
@@ -667,7 +670,7 @@ elif loadBestPoint:
                                                     deltaXIR,deltaYIR,deltaZIR,
                                                     lons,lats,
                                                     pixelTimesVis,
-                                                    imData[0],vis=False)
+                                                    imData[0],vis=False,az_adjust=-90)
 steps=0
 
 callShapeGen((long_o_not,lat_o_not,az_o_not,long_s,lat_s,az_s,distancenot,offsetsVis[0],offsetsVis[1],offsetsIR[0],offsetsIR[1],offsetVel,offsetVelAngle),vertices,vertIndices,pixScaleVis,pixScaleIR,inot,jnot,deltaXVis,deltaYVis,deltaZVis,deltaXIR,deltaYIR,deltaZIR,lons,lats,pixelTimesVis,pixelTimesIR,imData)
@@ -676,7 +679,7 @@ callShapeGen((long_o_not,lat_o_not,az_o_not,long_s,lat_s,az_s,distancenot,offset
 
 
 if produceMaps and loadBestPoint:
-    with pyf.open('/Users/fraserw/data/VIMS/covims_0004/procdata/'+imageName+'_ir.fits') as shan:
+    with pyf.open('/data/VIMS/covims_0004/procdata/'+imageName+'_ir.fits') as shan:
         specData=shan[0].data
         
     (channels,A,B)=specData.shape
@@ -687,7 +690,7 @@ if produceMaps and loadBestPoint:
         for s in range(B):
             (w,spec)=specAnalysis.getSpec(specData,l=l,s=s)
             med=num.nanmedian(spec)
-            h=specAnalysis.water(w,spec)
+            (h,junk)=specAnalysis.water(w,spec)
             if med>0.005 and h>0:
                 waterDepth[len(waterDepth)-1].append(h)
             else:
@@ -760,17 +763,7 @@ ax2.set_zlabel('z')
 
 
 
-
-
-
-
-
-
-
-
- 
-
-collection=Poly3DCollection(poly3d,linewidths=0.0,facecolors=colours)
+collection=Poly3DCollection(poly3d_r,linewidths=0.0,facecolors=colours)
 collection.set_alpha(alpha)
 pylCollection=ax1.add_collection3d(collection)
 
@@ -782,6 +775,7 @@ ax2.scatter(rot_vert[:,0][::vertSpacing],
             rot_vert[:,1][::vertSpacing],
             rot_vert[:,2][::vertSpacing],
             marker='.',s=2,c='k',alpha=0.5)
+
 
 
 plotData=imData[0]*0.0
@@ -796,7 +790,7 @@ w=num.where((imData[0]>0)&(imageVis==0))
 plotData[w]=0.3
 w=num.where((imData[0]==0)&(imageVis>0))
 plotData[w]=0.7
-realImPlot=ax3.imshow(plotData[::-1,:],aspect='equal',interpolation='nearest')
+realImPlot=ax3.imshow(plotData,aspect='equal',interpolation='nearest',origin='lower')
 realImPlot.set_cmap('CMRmap')
 ax3.set_xlabel('Visual')
 
@@ -812,7 +806,7 @@ w=num.where((imData[1]>0)&(imageIR==0))
 plotData[w]=0.3
 w=num.where((imData[1]==0)&(imageIR>0))
 plotData[w]=0.7
-modelImPlot=ax4.imshow(plotData[::-1,:],aspect='equal',interpolation='nearest')
+modelImPlot=ax4.imshow(plotData,aspect='equal',interpolation='nearest',origin='lower')
 modelImPlot.set_cmap('CMRmap')
 ax4.set_xlabel('IR')
 

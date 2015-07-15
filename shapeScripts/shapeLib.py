@@ -160,6 +160,8 @@ def reshape(vertices,vertIndices,
     Aphi_o=phi_o*-d2r
     Atheta_s=theta_s*-d2r
     Atheta_o=theta_o*-d2r
+    #azimuthes rotate along vector out of the screen
+    ###subtracting pi makes the top left panel orientation match the ds9 display of the fits images
     Aaz_o=az_o*-d2r-num.pi
     Aaz_s=az_s*-d2r-num.pi
 
@@ -369,7 +371,8 @@ def shapeGen_VIMS(vertices,vertIndices,
                   deltaX,deltaY,deltaZ,
                   lons,lats,
                   pixelTimes,
-                  imData,verbose=False,vis=False,mask=None):
+                  imData,verbose=False,vis=False,mask=None,
+                  az_adjust=0.0):
 
     w1=rot(long_o_not*-d2r,'z')
     w2=rot(lat_o_not*-d2r,'y')
@@ -384,8 +387,8 @@ def shapeGen_VIMS(vertices,vertIndices,
     spaceCraftVectornot=num.dot(W_not_reverse,distancenot*num.array([1.,0.,0.]))
     
     x=reshape(vertices,vertIndices,
-              long_o_not,lat_o_not,az_o_not,
-              long_s,lat_s,az_s)
+              long_o_not,lat_o_not,az_o_not+az_adjust,
+              long_s,lat_s,az_s+az_adjust)
 
     (rot_vertices_not,poly3d,n_not,m_not,ill_and_obs,n_obs,rot_n_sun,angs_s,angs_o)=x
     #(colours,area)=getColourArea(angs_o,angs_s,m_not,poly3d)
@@ -430,8 +433,8 @@ def shapeGen_VIMS(vertices,vertIndices,
             if lons[planetVertex]<>currLon or lats[planetVertex]<>currLat or num.abs(sampleResolution-currRes)/currRes>0.01:
                 currLon,currLat,currRes=lons[planetVertex],lats[planetVertex],sampleResolution
                 x=reshape(vertices,vertIndices,
-                          currLon,currLat,az_o_not,
-                          long_s,lat_s,az_s)
+                          currLon,currLat,az_o_not+az_adjust,
+                          long_s,lat_s,az_s+az_adjust)
                 (rot_vertices,poly3d,n,m,ill_and_obs,n_obs,rot_n_sun,angs_s,angs_o)=x
                  
                 if verbose: print rot_vertices[0],currLon,currLat,long_o_not,lat_o_not
@@ -441,20 +444,6 @@ def shapeGen_VIMS(vertices,vertIndices,
 
             (offy,offz)=offsets+offsetVel*(pixelTimes[i,j]-pixelTimes[inot,jnot])*24.*3600.*velAng
 
-            #we need to offset rot_vertices,poly3d,m
-            #rot_vertices_off=num.copy(rot_vertices)
-            #rot_vertices_off[:,0]+=offy
-            #rot_vertices_off[:,1]+=offz
-
-            #poly3d_off=num.copy(poly3d)
-            #poly3d_off[:,:,0]+=offy
-            #poly3d_off[:,:,1]+=offz
-
-            #m_off=num.copy(m)
-            #m_off[:,1]+=offy
-            #m_off[:,2]+=offz
-
-            #print currLon-long_o_not,currLat-lat_o_not,
 
             #pixeli,j are the distance from the reference point on the body in the image plane
             if vis:
@@ -469,11 +458,7 @@ def shapeGen_VIMS(vertices,vertIndices,
             #print pixel_off_i,pixel_off_j
 
         
-            #p3d=poly3d_off[ill_and_obs]
-            #c3d=colours[ill_and_obs]
-            #m2d=m_off[ill_and_obs]
             m2d=num.copy(m)[ill_and_obs]
-            #a2d=area[ill_and_obs]
 
 
             #offset by the difference between position offset and the pixel offset
@@ -490,6 +475,7 @@ def shapeGen_VIMS(vertices,vertIndices,
                 poly3d_out=num.copy(poly3d)
                 (colours_out,area)=getColourArea(angs_o,angs_s,m,poly3d_out)#=num.copy(colours)
                 rot_vert=num.copy(rot_vertices)
+    image=image[::-1,:]
 
     #edgeChi(imData,image)
 

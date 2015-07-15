@@ -399,14 +399,15 @@ imageNames=['2004163T121836_2004163T192848/cv1465661929_1',
             '2004163T121836_2004163T192848/cv1465669741_1',
             '2004163T121836_2004163T192848/cv1465669944_1',
             '2004163T121836_2004163T192848/cv1465670650_1', 
-            '2004163T121836_2004163T192848/cv1465671822_1',
+            '2004163T121836_2004163T192848/cv1465672904_1',
+            '2004163T121836_2004163T192848/cv1465673600_1',
             '2004163T121836_2004163T192848/cv1465672161_1',
             '2004163T193015_2004164T051726/cv1465678419_1',
             '2004163T193015_2004164T051726/cv1465678911_1',
             '2004163T193015_2004164T051726/cv1465679413_1',
             '2004163T193015_2004164T051726/cv1465679675_1',
             '2004163T193015_2004164T051726/cv1465680977_5']
-
+imageNames=['2004163T193015_2004164T051726/cv1465678911_1']
 
 
 ###below are the images that couldn't get a good fit
@@ -417,7 +418,7 @@ imageNames=['2004163T121836_2004163T192848/cv1465661929_1',
 #'2004163T121836_2004163T192848/cv1465670212_1',
 #'2004163T193015_2004164T051726/cv1465680977_2',
 
-extractSpec=False
+extractSpec=True
 
 for imageName in imageNames:
     if not extractSpec:continue
@@ -540,7 +541,12 @@ for imageName in imageNames:
     
     pixelTimesVis=getPixTimes(CassVis,imDataVis.shape[0],imDataVis.shape[1],Tnot,inot,jnot)
     pixelTimesIR=getPixTimes(CassIR,imDataIR.shape[0],imDataIR.shape[1],Tnot,inot,jnot)
-    
+
+    #print imageName,
+    #print pixelTimesIR[1][0]-pixelTimesIR[0][0],
+    #print pixelTimesIR[0][1]-pixelTimesIR[0][0]
+    #continue
+
     
     #distance units are in km, resolution units in km/pix
     [Xnot,Ynot,Znot]=CassIR[w][0][:3]
@@ -667,10 +673,11 @@ for imageName in imageNames:
 cmap=pyl.get_cmap('jet')
 
 generateMeanSpectra=False
+dumpingRegions=True
 showMapOverlay=True
 showBinaryColours=False
 showContours=True
-showJason=True
+showJason=False
 showScatter=False
 showShape=False
 saveMovie=False
@@ -681,11 +688,11 @@ doLineProfile=True
 
 numContours=25
 if includeMedLow: minPix=1
-else: minPix=2
+else: minPix=1
 
 if showMapOverlay:
     if showJason:
-        fs=(10,18)
+        fs=(10,10)
         alpha=0.4
     else:
         fs=(15,20)
@@ -714,7 +721,7 @@ cMind=-0.0
 cMaxd=0.16
 cbTitled='B-band Reddening'
 
-whichRes='low'
+whichRes='high'
 
 if whichRes=='high':
     #high res
@@ -748,7 +755,8 @@ elif whichRes=='all':
 extent=[-180,180,-90,90]
 
 
-
+if dumpingRegions:
+    dumpingSpectra=[[],[],[],[],[],[]]
 if generateMeanSpectra:
     whichSpecVis=[]
     whichSpecIR=[]
@@ -823,20 +831,35 @@ if generateMeanSpectra:
             (wat,watb)=specAnalysis.water(irwave,medIR)
             oSlope=specAnalysis.oSlope(fullwave,fullspec)
             dSlope=specAnalysis.dSlope(fullwave,fullspec)
+
+            if dumpingRegions:
+                if abs(wat-0.15)<0.03 and abs(watb-0.65)<0.015: #low
+                    dumpingSpectra[0].append(num.copy(fullspec))
+                elif abs(wat-0.22)<0.01 and abs(watb-0.72)<0.01: #normLow
+                    dumpingSpectra[1].append(num.copy(fullspec))
+                elif abs(wat-0.26)<0.01 and abs(watb-0.76)<0.01: #normMid
+                    dumpingSpectra[2].append(num.copy(fullspec))
+                elif abs(wat-0.33)<0.01 and abs(watb-0.79)<0.01: #normHigh
+                    dumpingSpectra[3].append(num.copy(fullspec))
+                elif abs(wat-0.29)<0.04 and abs(watb-0.825)<0.015: #weird
+                    dumpingSpectra[4].append(num.copy(fullspec))
+                elif wat>0.4: #high
+                    dumpingSpectra[5].append(num.copy(fullspec))
             #print wat
-            #if wat>1.2:
-            #    pyl.clf()
-            #    pyl.plot(fullwave,fullspec,'k--')
-            #    pyl.title(str(wat)+' '+str(oSlope))
-            #    pyl.show()
-            #    sys.exit()
+            #if abs(wat-.29)<0.05 and abs(watb-0.78)<0.03:
+                #pyl.clf()
+                #pyl.plot(fullwave,fullspec,'k-')
+                #pyl.title(str(wat)+' '+str(watb))
+                #dumpingSpectra.append(num.copy(fullspec))
+                #pyl.show()
+                #sys.exit()
 
             plotted+=1
             #i==44331 in the 'med' is a problem spectrum
-            if plotted in range(0,22000,1000) and i==44331:
+            #if plotted in range(0,22000,1000) and i==44331:
                 #pyl.plot(viswave[:86],junk[:86],lw=2)
                 #pyl.plot(irwave,medIR,lw=2)
-                pyl.plot(fullwave,fullspec)
+                #pyl.plot(fullwave,fullspec)
             avSpecs.append([fullspec,len(whichSpecVis[i]),len(whichSpecIR[i]),wat,watb,oSlope,dSlope])
         else:
             avSpecs.append([None,len(whichSpecVis[i]),len(whichSpecIR[i]),None,None,None,None])
@@ -846,6 +869,20 @@ if generateMeanSpectra:
     #pyl.show()
     #sys.exit()
     #print plotted
+
+    if dumpingRegions:
+        with open('WaterModelling/lowSpec_highres.pickle','w+') as outhan:
+            pick.dump([fullwave,dumpingSpectra[0]],outhan)
+        with open('WaterModelling/normLowSpec_highres.pickle','w+') as outhan:
+            pick.dump([fullwave,dumpingSpectra[1]],outhan)
+        with open('WaterModelling/normMidSpec_highres.pickle','w+') as outhan:
+            pick.dump([fullwave,dumpingSpectra[2]],outhan)
+        with open('WaterModelling/normHighSpec_highres.pickle','w+') as outhan:
+            pick.dump([fullwave,dumpingSpectra[3]],outhan)
+        with open('WaterModelling/weirdSpec_highres.pickle','w+') as outhan:
+            pick.dump([fullwave,dumpingSpectra[4]],outhan)
+        with open('WaterModelling/highSpec_highres.pickle','w+') as outhan:
+            pick.dump([fullwave,dumpingSpectra[5]],outhan)
     with open(whichRes+'_avSpecs.pickle','w+') as han:
         pick.dump(avSpecs,han)
     pyl.show()
@@ -901,6 +938,9 @@ if showScatter:
         
 
     pyl.scatter(waterDepths['high'][w],boundWaterDepths['high'][w])
+    x=num.array([0.1,0.4])
+    y=0.55+0.6*x
+    pyl.plot(x,y,'r-',lw=2)
     pyl.xlabel('$1.55+2 \\mbox{ $\\mu$m}$ absorption')
     pyl.ylabel('$3 \\mbox{ $\\mu$m}$ absorption')
     pyl.show()
@@ -1059,7 +1099,7 @@ if includeMedLow:
 
 colw=num.zeros(len(fullWaterDepths)).astype('float')
 alphasw=colw*0.0
-whichVertsToColour=num.where(fullWaterDepths>0.0)
+whichVertsToColour=num.where(fullWaterDepths>0.1)
 colw[whichVertsToColour]=(fullWaterDepths[whichVertsToColour]-cMinw)/(cMaxw-cMinw)
 alphasw[whichVertsToColour]=alpha
 
@@ -1072,7 +1112,7 @@ lLCollection1.set_linewidths(0.0)
 
 colwb=num.zeros(len(fullBoundWaterDepths)).astype('float')
 alphaswb=colwb*0.0
-whichVertsToColour=num.where(fullBoundWaterDepths>0.0)
+whichVertsToColour=num.where(fullBoundWaterDepths>0.6)
 colwb[whichVertsToColour]=(fullBoundWaterDepths[whichVertsToColour]-cMinwb)/(cMaxwb-cMinwb)
 alphaswb[whichVertsToColour]=alpha
 
@@ -1086,16 +1126,20 @@ lLCollection4.set_linewidths(0.0)
 
 colww=num.zeros(len(fullBoundWaterDepths)).astype('float')
 alphasww=colww*0.0
-wwRat=fullBoundWaterDepths/fullWaterDepths
-wwRat[num.where(wwRat<0.5)]=0.0
-wwRat[num.where(num.isnan(wwRat))]=0.0
-wwRat[num.where(( fullWaterDepths<0.18) | (fullBoundWaterDepths<0.65))]=0.0
-#w=num.where((fullWaterDepths<0.35) & (fullBoundWaterDepths>0.75))
-#colww[w]=1.0
-#w=num.where((fullWaterDepths>0.35))
-#colww[w]=0.5
-whichVertsToColour=num.where(wwRat>0.0)
-colww[whichVertsToColour]=(wwRat[whichVertsToColour]-cMinww)/(cMaxww-cMinww)
+#wwRat=fullBoundWaterDepths/fullWaterDepths
+####wwRat[num.where(wwRat<0.5)]=0.001
+#wwRat[num.where(num.isnan(wwRat))]=0.0
+#wwRat[num.where(( fullWaterDepths<0.1) | (fullBoundWaterDepths<0.6))]=0.0
+#whichVertsToColour=num.where(( fullWaterDepths>0.01)& (fullBoundWaterDepths>0.6))
+#colww[whichVertsToColour]=(wwRat[whichVertsToColour]-cMinww)/(cMaxww-cMinww)
+w=num.where((fullWaterDepths<0.35) & (fullBoundWaterDepths>0.75))
+colww[w]=0.6
+w=num.where((fullWaterDepths>0.35))
+colww[w]=0.95
+w=num.where(fullWaterDepths<0.19)
+colww[w]=0.1
+w=num.where((fullWaterDepths>=0.19)&(fullWaterDepths<0.35)&(fullBoundWaterDepths>=0.65)&(fullBoundWaterDepths<0.75))
+colww[w]=0.5
 alphasww[whichVertsToColour]=alpha
 
 lLCollection5=PolyCollection(vivll[whichVertsToPlot],zorder=10)
@@ -1137,13 +1181,15 @@ lLCollection3.set_linewidths(0.0)
 if threeColour:
 
     mixColours=num.ones((len(colo),4)).astype('float64')
-    mixColours[:,0]=cold
-    mixColours[:,1]=colo
-    mixColours[:,2]=colw
+    mixColours[:,0]=colw
+    mixColours[:,1]=colwb
+    mixColours[:,2]=0.5
     mixColours[:,3]=1.0
     mixColours=num.clip(mixColours,0.,1.)
     w=num.where((mixColours[:,0]==0)&(mixColours[:,1]==0)&(mixColours[:,2]==0))
     mixColours[:,3][w]=0.0
+
+    mixColours=cmap(colww)
 
     
     lLCollection3C=PolyCollection(vivll[whichVertsToPlot],zorder=10)
@@ -1172,7 +1218,7 @@ if threeColour:
 
 
     if doLineProfile:
-        lp=profileHandler(fig3c,sp1,lonsNotMod,lats,D,mids,collectionColoursw,mixColours=mixColours)
+        lp=profileHandler(fig3c,sp1,lonsNotMod,lats,D,mids,mixColours,mixColours=mixColours)
         pyl.show()
 
     if doLineProfile: sys.exit()
