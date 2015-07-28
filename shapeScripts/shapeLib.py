@@ -161,9 +161,9 @@ def reshape(vertices,vertIndices,
     Atheta_s=theta_s*-d2r
     Atheta_o=theta_o*-d2r
     #azimuthes rotate along vector out of the screen
-    ###subtracting pi makes the top left panel orientation match the ds9 display of the fits images
-    Aaz_o=az_o*-d2r-num.pi
-    Aaz_s=az_s*-d2r-num.pi
+    ###this current orientation matches the ds9 image when x is swapped
+    Aaz_o=az_o*-d2r
+    Aaz_s=az_s*-d2r
 
     n_obs_r=num.array([num.cos(Aphi_o)*num.cos(Atheta_o),
                       num.sin(Aphi_o)*num.cos(Atheta_o),
@@ -189,14 +189,12 @@ def reshape(vertices,vertIndices,
     W=num.dot(w3,num.dot(w2,w1))
 
 
-    w3=rotx(Aaz_s)
-    #w3=rot(Aaz_s,'x')
-    rot_n_sun=num.dot(w3, num.array([num.cos(Aphi_s-Aphi_o)*num.cos(Atheta_s-Atheta_o),
-                                     num.sin(Aphi_s-Aphi_o)*num.cos(Atheta_s-Atheta_o),
-                                     num.sin(Atheta_s-Atheta_o)])*1.4e9)
-    #rot_vertices=num.zeros(vertices.shape).astype(vertices.dtype)
-    #for i in range(len(vertices)):
-    #    rot_vertices[i]=num.dot(W,vertices[i])
+    w3=rotx((Aaz_s-Aaz_o))
+    rot_n_sun=num.dot(w3, num.array([num.cos((Aphi_s-Aphi_o))*num.cos((Atheta_s-Atheta_o)),
+                                     num.sin((Aphi_s-Aphi_o))*num.cos((Atheta_s-Atheta_o)),
+                                     num.sin((Atheta_s-Atheta_o))])*1.49e9)
+    print rot_n_sun,'*'
+
     rot_vertices=num.array(rotDot(W,vertices))
 
     #vertices/rot_vertices is just a list of vertices while vertIndices is a list of triplets
@@ -248,8 +246,12 @@ def getColourArea(angs_o,angs_s,mids,poly3d):
     colours=num.repeat(getc(angs_o,angs_s),3).reshape(len(mids),3)
     num.clip(colours,0.0,num.max(colours),colours)
     not_ill_and_obs=num.where(((angs_s>=num.pi/2)|(angs_s<=-num.pi/2))
-                            &((angs_o>=num.pi/2)|(angs_o<=-num.pi/2)))[0]
+                            &((angs_o>=num.pi/2)|(angs_o<=-num.pi/2)))[0]   ####and and or produce the same illuminated area
     colours[not_ill_and_obs]=0.0
+    #below two lines are a visualization hack
+    #ill_and_obs=num.where( ((angs_s>=-num.pi/2)&(angs_s<=num.pi/2))
+    #                    & ((angs_o>=-num.pi/2)&(angs_o<=num.pi/2)))[0]
+    #colours[ill_and_obs]=1.0
     cmax=num.max(colours)
     colours/=cmax
     ####
@@ -376,7 +378,7 @@ def shapeGen_VIMS(vertices,vertIndices,
 
     w1=rot(long_o_not*-d2r,'z')
     w2=rot(lat_o_not*-d2r,'y')
-    w3=rot(az_o_not*-d2r-num.pi,'x')
+    w3=rot((az_o_not+az_adjust)*-d2r,'x')
     W_not=num.dot(w3,num.dot(w2,w1))
 
 

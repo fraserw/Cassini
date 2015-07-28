@@ -147,8 +147,34 @@ def callShapeGenNoVel(r,vertices,vertIndices,ov,ova,ps_vis,ps_ir,inot,jnot,dXV,d
 
 ####data input
 
-#imageName='2004163T121836_2004163T192848/cv1465673600_1'
-imageName='2004163T193015_2004164T051726/cv1465677443_1'
+imageName='2004163T121836_2004163T192848/cv1465667594_1'
+#imageName='2004163T193015_2004164T051726/cv1465680977_5'
+
+#az_hacks
+azhacks={}
+azhacks['2004163T121836_2004163T192848/cv1465649746_1']=[0,0]
+
+azhacks['2004163T121836_2004163T192848/cv1465669944_1']=[-90,-90]
+azhacks['2004163T121836_2004163T192848/cv1465670212_1']=[-90,-30]
+azhacks['2004163T121836_2004163T192848/cv1465670650_1']=[-80,-20]
+azhacks['2004163T121836_2004163T192848/cv1465671285_1']=[0,-0]
+azhacks['2004163T121836_2004163T192848/cv1465671448_1']=[-70,-0]
+azhacks['2004163T121836_2004163T192848/cv1465671822_1']=[-60,-60]
+azhacks['2004163T121836_2004163T192848/cv1465672161_1']=[-30,-60]
+azhacks['2004163T121836_2004163T192848/cv1465673600_1']=[-60,-60]
+azhacks['2004163T193015_2004164T051726/cv1465677443_1']=[0,+50]
+azhacks['2004163T193015_2004164T051726/cv1465677670_1']=[0,+50]
+azhacks['2004163T193015_2004164T051726/cv1465678419_1']=[0,+30]
+azhacks['2004163T193015_2004164T051726/cv1465678911_1']=[0,190]
+azhacks['2004163T193015_2004164T051726/cv1465679413_1']=[0,+40]
+azhacks['2004163T193015_2004164T051726/cv1465679675_1']=[0,+60]
+azhacks['2004163T193015_2004164T051726/cv1465679932_1']=[0,+120]
+azhacks['2004163T193015_2004164T051726/cv1465680977_2']=[0,+80]
+azhacks['2004163T193015_2004164T051726/cv1465680977_5']=[0,+80]
+azhacks['2004163T193015_2004164T051726/cv1465678419_1']=[30,70]
+try:az_hack_o,az_hack_s=azhacks[imageName]
+except: az_hack_o,az_hack_s=0.,0.
+
 
 if len(sys.argv)>1:
     imageName=sys.argv[1]
@@ -170,18 +196,19 @@ showSources=True
 showNormals=True
 plotUpdate=False
 alpha=0.7
-loadBestPoint=False
+loadBestPoint=True
 doFitsVel=False
 doFitsNoVel=False
 doRandomVel=False
-produceMaps=True
+produceMaps=False
 findRoughOffsets=False
 exitAfterFit=False
-singleFrame=False
+singleFrame=True
+
 
 if len(sys.argv)>1:
-    doRandomVel=True
-    loadBestPoint=False
+    doRandomVel=False
+    loadBestPoint=True
     doFitsVel=False
     exitAfterFit=True
     
@@ -229,12 +256,12 @@ if imageName=='2004163T121836_2004163T192848/cv1465651336_1':
 
 ###hack to handle the post-flyby data
 if '2004163T193015_2004164T051726' in imageName:
-    print 'no swap needed'
-    #imDataVis=imDataVis[:,::-1]
-    #imDataIR=imDataIR[:,::-1]
-    #maskVis=maskVis[:,::-1]
-else:
-
+    print 'swap in y'
+    imDataVis=imDataVis[::-1,:]
+    imDataIR=imDataIR[::-1,:]
+    maskVis=maskVis[::-1,:]
+elif '2004163T121836_2004163T192848' in imageName:
+    print 'swap in x'
     imDataVis=imDataVis[:,::-1]
     imDataIR=imDataIR[:,::-1]
     maskVis=maskVis[:,::-1]
@@ -282,10 +309,9 @@ for i in range(6*n**2+2,len(data)):
 vertIndices=num.array(vertIndices)
 
 (mids,normals)=midsNormals(vertices[vertIndices])
-lons=(num.arctan2(mids[:,1],mids[:,0])*r2d)%360
+lonsNotMod=(num.arctan2(mids[:,1],mids[:,0])*r2d)
+lons=lonsNotMod%360
 lats=num.arcsin(mids[:,2]/(mids[:,0]**2+mids[:,1]**2+mids[:,2]**2)**0.5)*r2d
-
-
 
 
 
@@ -334,11 +360,6 @@ print 'Vis nominal sample resolution:',num.min(sampResolutionsVis[W])
 resRat=num.min(sampResolutionsVis[W])/sampResolutionsIR[argI]
 print resRat
 
-####I no longer think we need to do swapping
-#if resRat<0.5: #visual channel in 1x1 binned rather than 3x1
-#    print '\n   Flipping the Channels in X,Y.   \n'
-#    imData[0]=imData[0][::-1,::-1]
-#    imData[1]=imData[1][::-1,::-1]
 
 ###inot=int(CassIR[0,5])
 ###jnot=int(CassIR[0,6])
@@ -388,11 +409,10 @@ pixScaleIR=0.5
 
 long_o_not=latLongObjIR[inot][jnot]['SubSpacecraftLongitude']
 lat_o_not=latLongObjIR[inot][jnot]['SubSpacecraftLatitude']
-az_o_not=latLongObjIR[inot][jnot]['SpacecraftAzimuth']
+az_o_not=latLongObjIR[inot][jnot]['SpacecraftAzimuth']+az_hack_o
 long_s=latLongObjIR[inot][jnot]['SubSolarLongitude']
 lat_s=latLongObjIR[inot][jnot]['SubSolarLatitude']
-az_s=latLongObjIR[inot][jnot]['SubSolarAzimuth']
-
+az_s=latLongObjIR[inot][jnot]['SubSolarAzimuth']+az_hack_s
 
 
 #velocities
@@ -408,14 +428,15 @@ if az_s==0.:
     az_s=168.
 if az_o_not==0:
     az_o_not=44.
-#az_s=az_s%360.
+az_s=az_s%360.
+az_o_not=az_o_not%360
 
 print "Spice Kernel based angles:"
 print long_o_not,lat_o_not,az_o_not
 print long_s,lat_s,az_s
 print
 
-
+#sys.exit()
 
 
 
@@ -472,6 +493,8 @@ if doFitsVel:
                          distancenot,offsetsVis[0],offsetsVis[1],offsetsIR[0],offsetsIR[1],offsetVel,offsetVelAngle])
         entry+=sci.randn(nDim)*widthArr
         entry[len(entry)-2]=abs(entry[len(entry)-2])
+        entry[2]=entry[2]%360
+        entry[5]=entry[5]%360
         entry[len(entry)-1]=entry[len(entry)-1]%360. #making sure the offset velocity angle is between 0 and 360
         if entry[len(entry)-1]>360:
             sys.exit()
@@ -623,13 +646,9 @@ if loadBestPoint:# and imageName<>'2004163T193015_2004164T051726/cv1465680977_5'
     offsetsIR =num.array([offXI,offYI])
     
     
-"""
-elif loadBestPoint:
-    [long_o_not,lat_o_not,az_o_not,long_s,lat_s,az_s,distancenot,offXV,offYV,offXI,offYI,offsetVel,offsetVelAngle]=[56.0996532798, 22.0762964974, 83.1812446577,325.515775913, -36.5007226218, 4.66444444534,37660.7449174,199.06543933, 197.37789514, 537.211312984, 217.658682313,0.446094331964, 128.544304131]
-    offsetsVis=num.array([offXV,offYV])
-    offsetsIR =num.array([offXI,offYI])
-"""
-    
+
+
+
 (imageVis,poly3d_r,colours,rot_vert_r,crap,chi)=shapeGen_VIMS(vertices,vertIndices,
                                                     long_o_not,lat_o_not,az_o_not,
                                                     long_s,lat_s,az_s,
@@ -669,13 +688,17 @@ callShapeGen((long_o_not,lat_o_not,az_o_not,long_s,lat_s,az_s,distancenot,offset
 
 
 
-if produceMaps and loadBestPoint:
+if produceMaps :#and loadBestPoint:
     with pyf.open('/data/VIMS/covims_0004/procdata/'+imageName+'_ir.fits') as shan:
         specData=shan[0].data
     if '2004163T193015_2004164T051726' in imageName:
-        specData=specData[:,::-1,:]
-    else:
+        print 'not swaitch'
+        #specData=specData[:,:,:]
+    elif '2004163T121836_2004163T192848' in imageName:
+        print 'swaitch'
         specData=specData[:,::-1,::-1]
+
+
     (channels,A,B)=specData.shape
 
     waterDepth=[]
@@ -684,25 +707,44 @@ if produceMaps and loadBestPoint:
         for s in range(B):
             (w,spec)=specAnalysis.getSpec(specData,l=l,s=s)
             med=num.nanmedian(spec)
-            if med>0.005:
+            #print l,s,med,imData[1,l,s]
+
+            if med>0.0005:
                 (h,junk)=specAnalysis.water(w,spec)
-                if h>0:
+                if h>0.0:
                     waterDepth[len(waterDepth)-1].append(h)
                 else: waterDepth[len(waterDepth)-1].append(0.0)
             else:
                 waterDepth[len(waterDepth)-1].append(0.0)
     waterDepth=num.array(waterDepth)
 
+    """
+    for i in range(len(waterDepth)):
+        for j in range(len(waterDepth[i])):
+            if len(vertsInPixelIR[i][j])>0:
+                print i,j
+    print
+    for i in range(len(waterDepth)):
+        for j in range(len(waterDepth[i])):
+            if waterDepth[i,j]<>0:
+                print i,j
+    #sys.exit()
+    """
 
     x=[]
     y=[]
     for i in range(len(vertsInPixelIR)):
         for j in range(len(vertsInPixelIR[i])):
-            m=mids[vertsInPixelIR[i][j].astype('int')]
-            h=(m[:,0]**2+m[:,1]**2+m[:,2]**2)**0.5
-            hmed=num.median(h)
-            
-            if not num.isnan(hmed) and waterDepth[i,j]<>0:
+            if len(vertsInPixelIR[i][j])>0 and waterDepth[i,j]>0:
+
+                m=mids[vertsInPixelIR[i][j].astype('int')]
+                h=(m[:,0]**2+m[:,1]**2+m[:,2]**2)**0.5
+                hmed=num.median(h)
+                lon=num.median(lons[vertsInPixelIR[i][j].astype('int')])
+                lat=num.median(lats[vertsInPixelIR[i][j].astype('int')])
+
+                #if not num.isnan(hmed): print len(h),len(vertsInPixelIR[i][j])
+                #    if not num.isnan(hmed) and waterDepth[i,j]<>0:
                 x.append(hmed)
                 y.append(waterDepth[i,j])
 
@@ -710,12 +752,13 @@ if produceMaps and loadBestPoint:
                     #element0==1 we get bright red
                     #element1==1 we get bright green
                     #element2==1 we get bright navy blue
-                    if waterDepth[i,j]<0.2:
-                        colours[vertsInPixelIR[i][j][k]][0]=1.0#waterDepth[i,j]
-                    elif waterDepth[i,j]<0.37:
-                        colours[vertsInPixelIR[i][j][k]][1]=1.0
+                    if waterDepth[i,j]<0.22:
+                        colours[vertsInPixelIR[i][j][k]][0]=1.0 #red
+                    elif waterDepth[i,j]<0.32:
+                        colours[vertsInPixelIR[i][j][k]][1]=1.0 #green
                     else:
-                        colours[vertsInPixelIR[i][j][k]][2]=1.0
+                        colours[vertsInPixelIR[i][j][k]][2]=1.0 #blue
+
 
     fig2=pyl.figure(2)    
     pyl.scatter(x,y)
@@ -737,6 +780,9 @@ if singleFrame:
     ax1.set_xlim(-120,120)
     ax1.set_ylim(-120,120)
     ax1.set_zlim(-120,120)
+    ax1.set_xlabel('x')
+    ax1.set_ylabel('y')
+    ax1.set_zlabel('z')
     azim=0.0
     elev=0.0
     ax1.view_init(azim=azim, elev=elev)

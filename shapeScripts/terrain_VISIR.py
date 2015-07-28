@@ -184,7 +184,7 @@ class profileHandler:
             pyl.figure(self.main_figure_title)
             pyl.draw()
 
-def callShapeGen(r,vertices,vertIndices,ps_vis,ps_ir,inot,jnot,dXV,dYV,dZV,dXI,dYI,dZI,Ls,ls,pTimesV,pTimesI,imData):
+def callShapeGen(r,vertices,vertIndices,ps_vis,ps_ir,inot,jnot,dXV,dYV,dZV,dXI,dYI,dZI,Ls,ls,pTimesV,pTimesI,imData,az_adjust=0.0):
     global steps
     steps+=1
     print steps,
@@ -219,7 +219,7 @@ def callShapeGen(r,vertices,vertIndices,ps_vis,ps_ir,inot,jnot,dXV,dYV,dZV,dXI,d
                                                         dXV,dYV,dZV,
                                                         lons,lats,
                                                         pTimesV,
-                                                        imData[0],vis=True,mask=imData[2])
+                                                        imData[0],vis=True,mask=imData[2],az_adjust=az_adjust)
     (imageIR,poly3d,colours,rot_vert,vertsInPixelIR,chiIR) =shapeGen_VIMS(vertices,vertIndices,
                                                         L_o_n,l_o_n,A_o_n,
                                                         L_s,l_s,A_s,
@@ -230,7 +230,7 @@ def callShapeGen(r,vertices,vertIndices,ps_vis,ps_ir,inot,jnot,dXV,dYV,dZV,dXI,d
                                                         dXI,dYI,dZI,
                                                         lons,lats,
                                                         pTimesI,
-                                                        imData[1])
+                                                        imData[1],az_adjust=az_adjust)
   
     print '  ',(chiVis+chiIR)*0.5,'\n'
     return 0.5*(chiVis+chiIR)
@@ -338,7 +338,7 @@ vertLl=num.zeros((len(vertlons),2)).astype('float64')
 vertLl[:,0]=vertlons
 vertLl[:,1]=vertlats
 vivll=vertLl[vertIndices]
-#vivll[:,:,0]=(vivll[:,:,0]-180)%360-180
+
 whichVertsToPlot=[]
 for i in range(len(vivll)):
     #print num.max(vivll[i,:,0])-num.min(vivll[i,:,0])
@@ -387,38 +387,61 @@ lons=lons%360
 
 
 resolutions=[]
-imageNames=['2004163T121836_2004163T192848/cv1465661929_1',
-            '2004163T121836_2004163T192848/cv1465662631_1',
-            '2004163T121836_2004163T192848/cv1465664774_1',
-            '2004163T121836_2004163T192848/cv1465665440_1',
-            '2004163T121836_2004163T192848/cv1465665563_1',
-            '2004163T121836_2004163T192848/cv1465665771_1',
-            '2004163T121836_2004163T192848/cv1465667330_1', 
-            '2004163T121836_2004163T192848/cv1465667594_1',
-            '2004163T121836_2004163T192848/cv1465667721_1',
-            '2004163T121836_2004163T192848/cv1465669741_1',
-            '2004163T121836_2004163T192848/cv1465669944_1',
-            '2004163T121836_2004163T192848/cv1465670650_1', 
-            '2004163T121836_2004163T192848/cv1465672904_1',
-            '2004163T121836_2004163T192848/cv1465673600_1',
-            '2004163T121836_2004163T192848/cv1465672161_1',
-            '2004163T193015_2004164T051726/cv1465678419_1',
-            '2004163T193015_2004164T051726/cv1465678911_1',
-            '2004163T193015_2004164T051726/cv1465679413_1',
-            '2004163T193015_2004164T051726/cv1465679675_1',
-            '2004163T193015_2004164T051726/cv1465680977_5']
-imageNames=['2004163T193015_2004164T051726/cv1465678911_1']
+imageNames=['2004163T121836_2004163T192848/cv1465649433_1',
+    #'2004163T121836_2004163T192848/cv1465649746_1',
+    '2004163T121836_2004163T192848/cv1465649834_1',
+    '2004163T121836_2004163T192848/cv1465649979_1',
+    #'2004163T121836_2004163T192848/cv1465650070_1',
+    #'2004163T121836_2004163T192848/cv1465650234_1',
+    #'2004163T121836_2004163T192848/cv1465650745_1',
+    #'2004163T121836_2004163T192848/cv1465650834_1',
+    '2004163T121836_2004163T192848/cv1465651001_1',
+    #'2004163T121836_2004163T192848/cv1465651336_1',
+    '2004163T121836_2004163T192848/cv1465651734_1',
+    '2004163T121836_2004163T192848/cv1465651857_1',
+    '2004163T121836_2004163T192848/cv1465661929_1',
+    #'2004163T121836_2004163T192848/cv1465662631_1',
+    #'2004163T121836_2004163T192848/cv1465664774_1',
+    '2004163T121836_2004163T192848/cv1465665440_1',
+    '2004163T121836_2004163T192848/cv1465665563_1',
+    #'2004163T121836_2004163T192848/cv1465665771_1',
+    #'2004163T121836_2004163T192848/cv1465667594_1',
+    '2004163T121836_2004163T192848/cv1465667721_1',
+    '2004163T121836_2004163T192848/cv1465669741_1',
+    '2004163T121836_2004163T192848/cv1465669944_1',
+    #'2004163T121836_2004163T192848/cv1465670650_1',
+    #'2004163T121836_2004163T192848/cv1465671285_1',
+    #'2004163T121836_2004163T192848/cv1465671368_1',
+    #'2004163T121836_2004163T192848/cv1465671448_1',
+    #'2004163T121836_2004163T192848/cv1465671514_1',
+    #'2004163T121836_2004163T192848/cv1465671593_1',
+    #'2004163T121836_2004163T192848/cv1465671673_1',
+    #'2004163T121836_2004163T192848/cv1465671822_1',
+    #'2004163T121836_2004163T192848/cv1465672161_1',
+    #'2004163T121836_2004163T192848/cv1465672904_1',
+    #'2004163T121836_2004163T192848/cv1465673600_1',
+    #'2004163T121836_2004163T192848/cv1465662758_1',
+    #'2004163T121836_2004163T192848/cv1465665036_1',
+    '2004163T121836_2004163T192848/cv1465662167_1',
+    #'2004163T121836_2004163T192848/cv1465666573_1',
+    '2004163T121836_2004163T192848/cv1465667330_1',
+    #'2004163T121836_2004163T192848/cv1465669068_1',
+    #'2004163T121836_2004163T192848/cv1465670212_1',
+    '2004163T193015_2004164T051726/cv1465677443_1',
+    #'2004163T193015_2004164T051726/cv1465678419_1',
+    #'2004163T193015_2004164T051726/cv1465678911_1',
+    #'2004163T193015_2004164T051726/cv1465679413_1',
+    '2004163T193015_2004164T051726/cv1465679675_1']
+    #'2004163T193015_2004164T051726/cv1465679932_1',
+    #'2004163T193015_2004164T051726/cv1465680977_5',
+    #'2004163T193015_2004164T051726/cv1465677670_1',
+    #'2004163T193015_2004164T051726/cv1465680977_2']
+imageNames=['2004163T121836_2004163T192848/cv1465650745_1','2004163T121836_2004163T192848/cv1465650834_1','2004163T121836_2004163T192848/cv1465669944_1','2004163T193015_2004164T051726/cv1465678419_1']
+imageNames=['2004163T121836_2004163T192848/cv1465661929_1']
 
 
-###below are the images that couldn't get a good fit
-#'2004163T121836_2004163T192848/cv1465662167_1',
-#'2004163T121836_2004163T192848/cv1465665036_1',
-#'2004163T121836_2004163T192848/cv1465666573_1',
-#'2004163T121836_2004163T192848/cv1465669068_1',
-#'2004163T121836_2004163T192848/cv1465670212_1',
-#'2004163T193015_2004164T051726/cv1465680977_2',
 
-extractSpec=True
+extractSpec=False
 
 for imageName in imageNames:
     if not extractSpec:continue
@@ -473,7 +496,17 @@ for imageName in imageNames:
     IRBGPixels=num.where(imDataIR<256.)
     imDataIR[IRBGPixels]=0.0
 
-    
+    if '2004163T193015_2004164T051726' in imageName:
+        print 'swap in y'
+        imDataVis=imDataVis[::-1,:]
+        imDataIR=imDataIR[::-1,:]
+        maskVis=maskVis[::-1,:]
+    elif '2004163T121836_2004163T192848' in imageName:
+        print 'swap in x'
+        imDataVis=imDataVis[:,::-1]
+        imDataIR=imDataIR[:,::-1]
+        maskVis=maskVis[:,::-1]
+
     imData=num.concatenate([[imDataVis],[imDataIR],[maskVis]])
     (dump,A,B)=imData.shape
     
@@ -573,10 +606,7 @@ for imageName in imageNames:
     #load the best point
     (bestPoint,goodSamps)=getFit('/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName))
     [long_o_not,lat_o_not,az_o_not,long_s,lat_s,az_s,distancenot,offXV,offYV,offXI,offYI,offsetVel,offsetVelAngle,chi]=bestPoint
-    
-    #print distancenot
-    #print 
-    #print 'EMCEE best chi:',chi
+    print 'EMCEE best chi:',chi
 
     gotten=False
     if os.path.isfile('/data/VIMS/covims_0004/procdata/%s.rand'%(imageName)):
@@ -607,7 +637,8 @@ for imageName in imageNames:
     #print 'Vis nominal sample resolution:',num.min(sampResolutionsVis[W])
     
     #calculate the shape model
-    (imageVis,poly3d,colours,rot_vert,vertsInPixelVis,chi)=shapeGen_VIMS(vertices,vertIndices,
+    #NEED az_adjust=0 to get the pixels in the right places!
+    (imageVis,poly3d,colours,rot_vert,vertsInPixelVis,chiv)=shapeGen_VIMS(vertices,vertIndices,
                                                     long_o_not,lat_o_not,az_o_not,
                                                     long_s,lat_s,az_s,
                                                     distancenot,
@@ -617,8 +648,8 @@ for imageName in imageNames:
                                                     deltaXVis,deltaYVis,deltaZVis,
                                                     lons,lats,
                                                     pixelTimesVis,
-                                                    imData[0],vis=True,mask=imData[2])
-    (imageIR,poly3d,colours,rot_vert,vertsInPixelIR,chi)=shapeGen_VIMS(vertices,vertIndices,
+                                                    imData[0],vis=True,mask=imData[2],az_adjust=-90)
+    (imageIR,poly3d,colours,rot_vert,vertsInPixelIR,chii)=shapeGen_VIMS(vertices,vertIndices,
                                                     long_o_not,lat_o_not,az_o_not,
                                                     long_s,lat_s,az_s,
                                                     distancenot,
@@ -628,21 +659,25 @@ for imageName in imageNames:
                                                     deltaXIR,deltaYIR,deltaZIR,
                                                     lons,lats,
                                                     pixelTimesVis,
-                                                    imData[0],vis=False)
+                                                    imData[1],vis=False,az_adjust=-90)
+
 
     #produce the spectra files
     with pyf.open('/data/VIMS/covims_0004/procdata/'+imageName+'_ir.fits') as shan:
         IRspecData=shan[0].data
     with pyf.open('/data/VIMS/covims_0004/procdata/'+imageName+'_vis_strpd.fits') as shan:
         VISspecData=shan[0].data
-        
+
+    if '2004163T193015_2004164T051726' in imageName:
+        #IRspecData=IRspecData[:,:,:]
+        #VISspecData=VISspecData[:,:,:]
+        print 'no spectral swap'
+    else:
+        IRspecData=IRspecData[:,::-1,::-1]
+        VISspecData=VISspecData[:,::-1,::-1]
     (IRchannels,A,B)=IRspecData.shape
     (VISchannels,a,b)=VISspecData.shape
-     
-    #for cc in range(channels):
-    #    bg=num.median(IRspecData[cc,:,:][IRBGPixels])
-    #    print bg
-    #    IRspecData[cc,:,:]-=bg
+
 
     IRSpec=[]
     IRvip=[]
@@ -650,7 +685,7 @@ for imageName in imageNames:
         for s in range(B):
             (w,spec)=specAnalysis.getSpec(IRspecData,l=l,s=s)
             med=num.nanmedian(spec)
-            if med>0.005: #could probably put this at 0.0025
+            if len(vertsInPixelIR[l][s])>0:#med>0.00025: #could probably put this at 0.0025
                 IRSpec.append(spec)
                 IRvip.append(vertsInPixelIR[l][s])
     VISSpec=[]
@@ -659,7 +694,7 @@ for imageName in imageNames:
         for s in range(b):
             (w,spec)=specAnalysis.getSpecVis(VISspecData,l=l,s=s)
             med=num.nanmedian(spec)
-            if med>0.0025: #could probably put this at 0.0025
+            if len(vertsInPixelVis[l][s])>0:#med>0.00025: #could probably put this at 0.0025
                 VISSpec.append(spec)
                 VISvip.append(vertsInPixelVis[l][s])
 
@@ -672,8 +707,8 @@ for imageName in imageNames:
 ####plot parameters
 cmap=pyl.get_cmap('jet')
 
-generateMeanSpectra=False
-dumpingRegions=True
+generateMeanSpectra=True
+dumpingRegions=False
 showMapOverlay=True
 showBinaryColours=False
 showContours=True
@@ -700,37 +735,18 @@ if showMapOverlay:
 else:
     fs=(15,10)
     alpha=0.8
-cMaxw=0.35#1.1
-cMinw=0.18
-cbTitlew='1.6+2 Water-ice Absorption'
 
-cMaxwb=0.75#1.1
-cMinwb=0.65
-cbTitlewb='3 Water-ice Absorption'
-
-cMaxww=3.4
-cMinww=1.8
-cbTitleww='Absorption Ratio'
-
-
-cMaxo=-0.03
-cMino=-0.09
-cbTitleo='R-band Reddening'
-
-cMind=-0.0
-cMaxd=0.16
-cbTitled='B-band Reddening'
 
 whichRes='high'
 
 if whichRes=='high':
     #high res
     resLow=0
-    resHigh=18.1
+    resHigh=45.#18.1
     title='High Resolution, <16 km/pix'
 elif whichRes=='med':
     #med res
-    resLow=18.1
+    resLow=27.5#18.1
     resHigh=28
     title='Medium Resolution, 22>r>16 km/pix'
 elif whichRes=='low':
@@ -750,6 +766,28 @@ elif whichRes=='all':
     resLow=-1.
     resHigh=1.e6
     title='All VIMS fits.'
+
+
+cMaxw=0.35#1.1
+cMinw=0.18
+cbTitlew='1.6+2 Water-ice Absorption'
+
+cMaxwb=0.81#1.1
+cMinwb=0.7
+cbTitlewb='3 Water-ice Absorption'
+
+cMaxww=3.4
+cMinww=1.8
+cbTitleww='Absorption Ratio'
+
+
+cMaxo=-0.03
+cMino=-0.09
+cbTitleo='R-band Reddening'
+
+cMind=-0.0
+cMaxd=0.16
+cbTitled='B-band Reddening'
 ####
 #################
 extent=[-180,180,-90,90]
@@ -784,9 +822,10 @@ if generateMeanSpectra:
                 for j in IRvip[i]:
                     whichSpecIR[int(j)].append(l)
 
+
     plotted=0
     avSpecs=[]
-    for i in range(len(whichSpecVis)):
+    for i in range(len(whichSpecIR)):
         v=[]
         ir=[]
         if len(whichSpecVis[i])>=1 and len(whichSpecIR[i])>=1:
@@ -804,6 +843,7 @@ if generateMeanSpectra:
             for l in whichSpecIR[i]:
                 s=normIRSpec(IRSpecs[l])
                 ir.append(s)
+
             ir=num.array(ir)
             x=num.median(ir)
             ir/=x
@@ -812,7 +852,6 @@ if generateMeanSpectra:
                 #pyl.plot(irwave,IRSpecs[l]/ir[len(irs)])
                 irs.append(IRSpecs[l]*ir[len(irs)])
 
-            
             medVis=nanmean(num.array(vs))
             medVis/=normVisSpec(medVis)
             junk=num.copy(medVis)
@@ -827,8 +866,17 @@ if generateMeanSpectra:
             fullspec=num.concatenate([medVis[:86],medIR[w]])
             fullwave=num.concatenate([viswave[:86],irwave[w]])
 
-
-            (wat,watb)=specAnalysis.water(irwave,medIR)
+            #take the median of water depths, not the water depth from the median spectrum
+            nSpec=len(irs)
+            wats=[]
+            watbs=[]
+            for l in range(nSpec):
+                (wat,watb)=specAnalysis.water(irwave,irs[l])
+                wats.append(wat)
+                watbs.append(watb)
+            #print nSpec,wats,watbs
+            wat,watb=num.median(wats),num.median(watbs)
+            #print specAnalysis.water(irwave,medIR)
             oSlope=specAnalysis.oSlope(fullwave,fullspec)
             dSlope=specAnalysis.dSlope(fullwave,fullspec)
 
@@ -856,14 +904,15 @@ if generateMeanSpectra:
 
             plotted+=1
             #i==44331 in the 'med' is a problem spectrum
-            #if plotted in range(0,22000,1000) and i==44331:
-                #pyl.plot(viswave[:86],junk[:86],lw=2)
-                #pyl.plot(irwave,medIR,lw=2)
-                #pyl.plot(fullwave,fullspec)
+            if plotted in range(0,22000,1000):
+                pyl.plot(viswave[:86],junk[:86],lw=2)
+                pyl.plot(irwave,medIR,lw=2)
+                pyl.plot(fullwave,fullspec)
             avSpecs.append([fullspec,len(whichSpecVis[i]),len(whichSpecIR[i]),wat,watb,oSlope,dSlope])
         else:
             avSpecs.append([None,len(whichSpecVis[i]),len(whichSpecIR[i]),None,None,None,None])
 
+    #print 'number of specs',len(avSpecs)
     #pyl.xlabel('$\\lambda \\mbox{ ($\\mu$m)}$')
     #pyl.ylabel('Normalized Reflectance')
     #pyl.show()
@@ -886,15 +935,15 @@ if generateMeanSpectra:
     with open(whichRes+'_avSpecs.pickle','w+') as han:
         pick.dump(avSpecs,han)
     pyl.show()
-    sys.exit()
-else:
-    avSpecs={}
-    with open('high_avSpecs.pickle') as han:
-        avSpecs['high']=pick.load(han)
-    with open('med_avSpecs.pickle') as han:
-        avSpecs['med']=pick.load(han)
-    with open('low_avSpecs.pickle') as han:
-        avSpecs['low']=pick.load(han)
+    #sys.exit()
+
+avSpecs={}
+with open('high_avSpecs.pickle') as han:
+    avSpecs['high']=pick.load(han)
+with open('med_avSpecs.pickle') as han:
+    avSpecs['med']=pick.load(han)
+with open('low_avSpecs.pickle') as han:
+    avSpecs['low']=pick.load(han)
 
 specs={'high':[],'med':[],'low':[]}
 numVisSamps={'high':[],'med':[],'low':[]}
@@ -930,7 +979,7 @@ for k in avSpecs:
 
 if showScatter:
     elevation=(mids[:,0]**2+mids[:,1]**2+mids[:,2]**2)**0.5
-    w=num.where((waterDepths['high']>0.0)&(boundWaterDepths['high']<>-32768.)&(oSlopes['high']<>-32768.)&(oSlopes['high']<0.02)&(dSlopes['high']<>-32768.))
+    w=num.where((waterDepths['high']>0.0)&(boundWaterDepths['high']<>-32768.)&(oSlopes['high']<>-32768.))#&(oSlopes['high']<0.02)&(dSlopes['high']<>-32768.))
 
     #W=num.where((waterDepths['high'][w]<0.34)&(boundWaterDepths['high'][w]>0.75))
     #pyl.scatter(lonsNotMod[w][W],lats[w][W])
@@ -1099,9 +1148,10 @@ if includeMedLow:
 
 colw=num.zeros(len(fullWaterDepths)).astype('float')
 alphasw=colw*0.0
-whichVertsToColour=num.where(fullWaterDepths>0.1)
+whichVertsToColour=num.where(fullWaterDepths<>-32768.)
 colw[whichVertsToColour]=(fullWaterDepths[whichVertsToColour]-cMinw)/(cMaxw-cMinw)
 alphasw[whichVertsToColour]=alpha
+
 
 lLCollection1=PolyCollection(vivll[whichVertsToPlot],zorder=10)
 collectionColoursw=cmap(colw)
