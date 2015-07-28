@@ -27,7 +27,6 @@ def rot(ang,axis):
     return w
 
 def rotx(ang):
-        
     w=num.array([[1.0,0.0,0.0],
                 [0.0,num.cos(ang),-num.sin(ang)],
                 [0.0,num.sin(ang),num.cos(ang)]])
@@ -168,9 +167,10 @@ def reshape(vertices,vertIndices,
     n_obs_r=num.array([num.cos(Aphi_o)*num.cos(Atheta_o),
                       num.sin(Aphi_o)*num.cos(Atheta_o),
                       num.sin(Atheta_o)])
-    n_sun=num.array([num.cos(Aphi_s)*num.cos(Atheta_s),
-                    num.sin(Aphi_s)*num.cos(Atheta_s),
-                    num.sin(Atheta_s)])*1.4e9
+    n_sun=num.array([num.cos(-Aphi_s)*num.cos(-Atheta_s),
+                    num.sin(-Aphi_s)*num.cos(-Atheta_s),
+                    num.sin(-Atheta_s)])*1.4e9
+
 
     n_obs=num.array([1.,0.,0.])*1.4e9
 
@@ -183,18 +183,17 @@ def reshape(vertices,vertIndices,
     w1=rotz(Aphi_o)
     w2=roty(Atheta_o)
     w3=rotx(Aaz_o)
-    #w1=rot(Aphi_o,'z')
-    #w2=rot(Atheta_o,'y')
-    #w3=rot(Aaz_o,'x')
     W=num.dot(w3,num.dot(w2,w1))
 
+    rot_n_sun=num.dot(W,n_sun)
 
-    w3=rotx((Aaz_s-Aaz_o))
-    rot_n_sun=num.dot(w3, num.array([num.cos((Aphi_s-Aphi_o))*num.cos((Atheta_s-Atheta_o)),
-                                     num.sin((Aphi_s-Aphi_o))*num.cos((Atheta_s-Atheta_o)),
-                                     num.sin((Atheta_s-Atheta_o))])*1.49e9)
-    print rot_n_sun,'*'
-
+    """
+    old and broken
+    #w3=rotx((Aaz_s-Aaz_o))
+    #rot_n_sun=num.dot(w3, num.array([num.cos((Aphi_s-Aphi_o))*num.cos((Atheta_s-Atheta_o)),
+    #                                 num.sin((Aphi_s-Aphi_o))*num.cos((Atheta_s-Atheta_o)),
+    #                                 num.sin((Atheta_s-Atheta_o))])*1.49e9)
+    """
     rot_vertices=num.array(rotDot(W,vertices))
 
     #vertices/rot_vertices is just a list of vertices while vertIndices is a list of triplets
@@ -468,7 +467,7 @@ def shapeGen_VIMS(vertices,vertIndices,
             #print len(w_in_pixel[0])
             if len(w_in_pixel[0])>0:
                 image[i,j]=1.0
-                vertsInPixel[i].append(ill_and_obs[w_in_pixel]*1.0)
+                vertsInPixel[i].append(ill_and_obs[w_in_pixel]*1)
             else:
                 vertsInPixel[i].append(num.array([]))
                 

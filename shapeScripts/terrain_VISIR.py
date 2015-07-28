@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env pythonw
 
 import numpy as num, pylab as pyl, pickle as pick,os
 from astropy.io import fits as pyf
@@ -184,56 +184,11 @@ class profileHandler:
             pyl.figure(self.main_figure_title)
             pyl.draw()
 
-def callShapeGen(r,vertices,vertIndices,ps_vis,ps_ir,inot,jnot,dXV,dYV,dZV,dXI,dYI,dZI,Ls,ls,pTimesV,pTimesI,imData,az_adjust=0.0):
-    global steps
-    steps+=1
-    print steps,
 
-    (L_o_n,l_o_n,A_o_n,L_s,l_s,A_s,dn,oxv,oyv,oxi,oyi,ov,ova)=r
-
-    if abs(oxv)>900. or abs(oyv)>900. or oxv==num.inf or oxv==-num.inf or oyv==num.inf or oyv==-num.inf:
-        #print oxv,oyv
-        return -num.inf
-    if abs(oxi)>900. or abs(oyi)>900. or oxi==num.inf or oxi==-num.inf or oyi==num.inf or oyi==-num.inf:
-        #print oxi,oyi
-        return -num.inf
-    if  dn<0 or ov<0 or ov>5 or ova<0 or ova>=360. or dn<0:
-        #print dn,ov,ova
-        return -num.inf
-    if L_o_n>=360. or L_o_n<0. or l_o_n>90. or l_o_n<-90. or A_o_n>=360. or A_o_n<0. or l_s>90. or l_s<-90. or L_s>=360. or L_s<0. or A_s<0 or A_s>=360.:
-        print L_s,l_s,A_s
-        return -num.inf
-
-    print L_o_n,l_o_n,A_o_n
-    print '    ',L_s,l_s,A_s
-    print '    ',dn
-    print '    ',oxv,oyv,oxi,oyi
-    print '    ',ov,ova
-    (imageVis,poly3d,colours,rot_vert,vertsInPixelVis,chiVis)=shapeGen_VIMS(vertices,vertIndices,
-                                                        L_o_n,l_o_n,A_o_n,
-                                                        L_s,l_s,A_s,
-                                                        dn,
-                                                        num.array([oxv,oyv]), ov,ova,
-                                                        ps_vis,
-                                                        inot,jnot,
-                                                        dXV,dYV,dZV,
-                                                        lons,lats,
-                                                        pTimesV,
-                                                        imData[0],vis=True,mask=imData[2],az_adjust=az_adjust)
-    (imageIR,poly3d,colours,rot_vert,vertsInPixelIR,chiIR) =shapeGen_VIMS(vertices,vertIndices,
-                                                        L_o_n,l_o_n,A_o_n,
-                                                        L_s,l_s,A_s,
-                                                        dn,
-                                                        num.array([oxi,oyi]), ov,ova,
-                                                        ps_ir,
-                                                        inot,jnot,
-                                                        dXI,dYI,dZI,
-                                                        lons,lats,
-                                                        pTimesI,
-                                                        imData[1],az_adjust=az_adjust)
-  
-    print '  ',(chiVis+chiIR)*0.5,'\n'
-    return 0.5*(chiVis+chiIR)
+def isValidSpecValues(r):
+    if (r[3]<0.0 or r[3]>0.5) or (r[4]<0.55 or r[4]>0.85) or r[3]==None or r[4]==None:
+        return False
+    else: return True
 
 
 
@@ -264,9 +219,14 @@ def normIRSpec(spec,w0=0,w1=7):
 
 def nanmean(x):
     o=[]
-    for ii in range(len(x[0])):
-        w=num.where(num.isnan(x[:,ii])==False)
-        o.append(num.mean(x[:,ii][w]))
+    if x.shape[1]>3:
+        for ii in range(len(x[0])):
+            w=num.where(num.isnan(x[:,ii])==False)
+            o.append(num.mean(x[:,ii][w]))
+    else:
+        for ii in range(len(x[0])):
+            w=num.where(num.isnan(x[:,ii])==False)
+            o.append(num.mean(x[:,ii][w]))
     return num.array(o)
             
 ######
@@ -294,6 +254,24 @@ def getPars(fn):
     return (vc,vi,oxv,oyv,oxi,oyi,dn)
 
 
+def zeroBin(image,binWidth=25):
+    (A,B)=image.shape
+    mini=0.02#num.min(image)
+    outImage=num.zeros([A/binWidth,B/binWidth]).astype('float64')
+    for ii in range(0,A-binWidth,binWidth):
+        for jj in range(0,B-binWidth,binWidth):
+            subsec=image[ii:ii+binWidth,jj:jj+binWidth]
+            w=num.where(subsec>mini)
+            outImage[ii/binWidth,jj/binWidth]=num.mean(subsec[w])
+    return outImage
+
+def getAlbedo(lng,lat,binIm):
+    (height,width)=binIm.shape
+    x=(  (lng+180)*width/360.).astype('int')
+    y=(((lat+90)*height/180.)).astype('int')
+
+    return binIm[y,x]
+
 
 pyl.rcParams['contour.negative_linestyle'] = 'dashed'
 
@@ -306,7 +284,19 @@ img.save('Mercator.png')
 sys.exit()
 """
 newImage=mpimg.imread('/data/PhoebePDSMaps/PhoebeFull.png')
-newImage=newImage[:,:,0:3]
+newImage=num.sum(newImage[:,:,0:3],axis=2)/3.
+binnedNewImage=zeroBin(newImage)
+
+with pyf.open('/data/PhoebeAlbedoMap/Sim99mod2.fits') as ddd:
+    albedoImage=ddd[0].data*1.
+w=num.where(albedoImage<115)
+W=num.where(albedoImage>=115)
+albedoImage-=115.
+albedoImage*=0.07/(221.-115.)
+albedoImage+=0.06
+albedoImage[w]=-32768.
+
+
 
 #load the shape model
 
@@ -341,10 +331,10 @@ vivll=vertLl[vertIndices]
 
 whichVertsToPlot=[]
 for i in range(len(vivll)):
-    #print num.max(vivll[i,:,0])-num.min(vivll[i,:,0])
     if num.max(vivll[i,:,0])-num.min(vivll[i,:,0])<300:
         whichVertsToPlot.append(i)
 whichVertsToPlot=num.array(whichVertsToPlot)
+#whichVertsToPlot=num.arange(len(vivll))
 
 """
 #testing
@@ -377,6 +367,7 @@ D=(mids[:,0]**2+mids[:,1]**2+mids[:,2]**2)**0.5
 meanRadius=num.median(D)
 print 'Median radius is:',meanRadius
 
+
 gridLong=num.linspace(num.min(lons),num.max(lons),360*10)
 gridLat=num.linspace(num.min(lats),num.max(lats),360*10)
 gridD=interp.griddata((lons,lats),D,(gridLong[None,:],gridLat[:,None]),method='linear')
@@ -385,61 +376,39 @@ gridD=interp.griddata((lons,lats),D,(gridLong[None,:],gridLat[:,None]),method='l
 lonsNotMod=lons*1.
 lons=lons%360
 
+albedos=getAlbedo(lonsNotMod,lats,albedoImage)
+
 
 resolutions=[]
 imageNames=['2004163T121836_2004163T192848/cv1465649433_1',
-    #'2004163T121836_2004163T192848/cv1465649746_1',
-    '2004163T121836_2004163T192848/cv1465649834_1',
-    '2004163T121836_2004163T192848/cv1465649979_1',
-    #'2004163T121836_2004163T192848/cv1465650070_1',
-    #'2004163T121836_2004163T192848/cv1465650234_1',
-    #'2004163T121836_2004163T192848/cv1465650745_1',
-    #'2004163T121836_2004163T192848/cv1465650834_1',
-    '2004163T121836_2004163T192848/cv1465651001_1',
-    #'2004163T121836_2004163T192848/cv1465651336_1',
-    '2004163T121836_2004163T192848/cv1465651734_1',
-    '2004163T121836_2004163T192848/cv1465651857_1',
-    '2004163T121836_2004163T192848/cv1465661929_1',
-    #'2004163T121836_2004163T192848/cv1465662631_1',
-    #'2004163T121836_2004163T192848/cv1465664774_1',
-    '2004163T121836_2004163T192848/cv1465665440_1',
-    '2004163T121836_2004163T192848/cv1465665563_1',
-    #'2004163T121836_2004163T192848/cv1465665771_1',
-    #'2004163T121836_2004163T192848/cv1465667594_1',
-    '2004163T121836_2004163T192848/cv1465667721_1',
-    '2004163T121836_2004163T192848/cv1465669741_1',
-    '2004163T121836_2004163T192848/cv1465669944_1',
-    #'2004163T121836_2004163T192848/cv1465670650_1',
-    #'2004163T121836_2004163T192848/cv1465671285_1',
-    #'2004163T121836_2004163T192848/cv1465671368_1',
-    #'2004163T121836_2004163T192848/cv1465671448_1',
-    #'2004163T121836_2004163T192848/cv1465671514_1',
-    #'2004163T121836_2004163T192848/cv1465671593_1',
-    #'2004163T121836_2004163T192848/cv1465671673_1',
-    #'2004163T121836_2004163T192848/cv1465671822_1',
-    #'2004163T121836_2004163T192848/cv1465672161_1',
-    #'2004163T121836_2004163T192848/cv1465672904_1',
-    #'2004163T121836_2004163T192848/cv1465673600_1',
-    #'2004163T121836_2004163T192848/cv1465662758_1',
-    #'2004163T121836_2004163T192848/cv1465665036_1',
-    '2004163T121836_2004163T192848/cv1465662167_1',
-    #'2004163T121836_2004163T192848/cv1465666573_1',
-    '2004163T121836_2004163T192848/cv1465667330_1',
-    #'2004163T121836_2004163T192848/cv1465669068_1',
-    #'2004163T121836_2004163T192848/cv1465670212_1',
-    '2004163T193015_2004164T051726/cv1465677443_1',
-    #'2004163T193015_2004164T051726/cv1465678419_1',
-    #'2004163T193015_2004164T051726/cv1465678911_1',
-    #'2004163T193015_2004164T051726/cv1465679413_1',
-    '2004163T193015_2004164T051726/cv1465679675_1']
-    #'2004163T193015_2004164T051726/cv1465679932_1',
-    #'2004163T193015_2004164T051726/cv1465680977_5',
-    #'2004163T193015_2004164T051726/cv1465677670_1',
-    #'2004163T193015_2004164T051726/cv1465680977_2']
-imageNames=['2004163T121836_2004163T192848/cv1465650745_1','2004163T121836_2004163T192848/cv1465650834_1','2004163T121836_2004163T192848/cv1465669944_1','2004163T193015_2004164T051726/cv1465678419_1']
-imageNames=['2004163T121836_2004163T192848/cv1465661929_1']
+'2004163T121836_2004163T192848/cv1465649746_1',
+'2004163T121836_2004163T192848/cv1465649834_1',
+'2004163T121836_2004163T192848/cv1465649979_1',
+'2004163T121836_2004163T192848/cv1465650070_1',
+'2004163T121836_2004163T192848/cv1465650745_1',
+'2004163T121836_2004163T192848/cv1465650834_1',
+'2004163T121836_2004163T192848/cv1465651001_1',
+'2004163T121836_2004163T192848/cv1465651857_1',
+'2004163T121836_2004163T192848/cv1465661929_1',
+'2004163T121836_2004163T192848/cv1465662167_1',
+'2004163T121836_2004163T192848/cv1465662631_1',
+'2004163T121836_2004163T192848/cv1465664774_1',
+'2004163T121836_2004163T192848/cv1465669068_1',
+'2004163T121836_2004163T192848/cv1465669944_1',
+'2004163T121836_2004163T192848/cv1465670212_1',
+'2004163T121836_2004163T192848/cv1465670650_1',
+'2004163T121836_2004163T192848/cv1465672161_1',
+'2004163T121836_2004163T192848/cv1465673600_1',
+'2004163T193015_2004164T051726/cv1465677443_1',
+'2004163T193015_2004164T051726/cv1465677670_1',
+'2004163T193015_2004164T051726/cv1465678419_1',
+'2004163T193015_2004164T051726/cv1465678911_1',
+'2004163T193015_2004164T051726/cv1465679413_1',
+'2004163T193015_2004164T051726/cv1465679675_1',
+'2004163T193015_2004164T051726/cv1465679932_1']
 
 
+initLimit=5.
 
 extractSpec=False
 
@@ -575,12 +544,7 @@ for imageName in imageNames:
     pixelTimesVis=getPixTimes(CassVis,imDataVis.shape[0],imDataVis.shape[1],Tnot,inot,jnot)
     pixelTimesIR=getPixTimes(CassIR,imDataIR.shape[0],imDataIR.shape[1],Tnot,inot,jnot)
 
-    #print imageName,
-    #print pixelTimesIR[1][0]-pixelTimesIR[0][0],
-    #print pixelTimesIR[0][1]-pixelTimesIR[0][0]
-    #continue
 
-    
     #distance units are in km, resolution units in km/pix
     [Xnot,Ynot,Znot]=CassIR[w][0][:3]
     if distancenot==None:
@@ -602,10 +566,18 @@ for imageName in imageNames:
     (junk,deltaXVis,deltaYVis,deltaZVis)=getVels(CassVis,pixelTimesVis,Xnot,Ynot,Znot,inot,jnot,polyOrder=2)
     (spaceCraftVectornot,deltaXIR,deltaYIR,deltaZIR)=getVels(CassIR,pixelTimesIR,Xnot,Ynot,Znot,inot,jnot,polyOrder=2)
     
+    long_o_not=latLongObjIR[inot][jnot]['SubSpacecraftLongitude']
+    lat_o_not=latLongObjIR[inot][jnot]['SubSpacecraftLatitude']
+    az_o_not=latLongObjIR[inot][jnot]['SpacecraftAzimuth']
+    long_s=latLongObjIR[inot][jnot]['SubSolarLongitude']
+    lat_s=latLongObjIR[inot][jnot]['SubSolarLatitude']
+    az_s=latLongObjIR[inot][jnot]['SubSolarAzimuth']
+    initial=num.array([long_o_not,lat_o_not,az_o_not,long_s,lat_s])
+
 
     #load the best point
-    (bestPoint,goodSamps)=getFit('/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName))
-    [long_o_not,lat_o_not,az_o_not,long_s,lat_s,az_s,distancenot,offXV,offYV,offXI,offYI,offsetVel,offsetVelAngle,chi]=bestPoint
+    (bestPoint,goodSamps)=getFit('/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName),limit=initLimit,initialAngles=initial)
+    [long_o_not,lat_o_not,az_o_not,long_s,lat_s,distancenot,offXV,offYV,offXI,offYI,offsetVel,offsetVelAngle,chi]=bestPoint
     print 'EMCEE best chi:',chi
 
     gotten=False
@@ -623,7 +595,7 @@ for imageName in imageNames:
                 for j in range(1,len(s)-1):
                     x.append(float(s[j].split(']')[0]))
                 x=num.array(x)
-                [long_o_not,lat_o_not,az_o_not,long_s,lat_s,az_s,distancenot,offXV,offYV,offXI,offYI,offsetVel,offsetVelAngle]=x
+                [long_o_not,lat_o_not,az_o_not,long_s,lat_s,distancenot,offXV,offYV,offXI,offYI,offsetVel,offsetVelAngle]=x
                 chi=rchi
                 gotten=True
         print 'RANDOM best chi:',chi
@@ -640,7 +612,7 @@ for imageName in imageNames:
     #NEED az_adjust=0 to get the pixels in the right places!
     (imageVis,poly3d,colours,rot_vert,vertsInPixelVis,chiv)=shapeGen_VIMS(vertices,vertIndices,
                                                     long_o_not,lat_o_not,az_o_not,
-                                                    long_s,lat_s,az_s,
+                                                    long_s,lat_s,0,
                                                     distancenot,
                                                     offsetsVis, offsetVel,offsetVelAngle,
                                                     pixScaleVis,
@@ -651,7 +623,7 @@ for imageName in imageNames:
                                                     imData[0],vis=True,mask=imData[2],az_adjust=-90)
     (imageIR,poly3d,colours,rot_vert,vertsInPixelIR,chii)=shapeGen_VIMS(vertices,vertIndices,
                                                     long_o_not,lat_o_not,az_o_not,
-                                                    long_s,lat_s,az_s,
+                                                    long_s,lat_s,0,
                                                     distancenot,
                                                     offsetsIR, offsetVel,offsetVelAngle,
                                                     pixScaleIR,
@@ -669,8 +641,6 @@ for imageName in imageNames:
         VISspecData=shan[0].data
 
     if '2004163T193015_2004164T051726' in imageName:
-        #IRspecData=IRspecData[:,:,:]
-        #VISspecData=VISspecData[:,:,:]
         print 'no spectral swap'
     else:
         IRspecData=IRspecData[:,::-1,::-1]
@@ -685,19 +655,20 @@ for imageName in imageNames:
         for s in range(B):
             (w,spec)=specAnalysis.getSpec(IRspecData,l=l,s=s)
             med=num.nanmedian(spec)
-            if len(vertsInPixelIR[l][s])>0:#med>0.00025: #could probably put this at 0.0025
+            if len(vertsInPixelIR[l][s])>0:#med>IRDataMin:# and imData[1][l][s]>0:
                 IRSpec.append(spec)
                 IRvip.append(vertsInPixelIR[l][s])
+
     VISSpec=[]
     VISvip=[]
     for l in range(a):
         for s in range(b):
             (w,spec)=specAnalysis.getSpecVis(VISspecData,l=l,s=s)
             med=num.nanmedian(spec)
-            if len(vertsInPixelVis[l][s])>0:#med>0.00025: #could probably put this at 0.0025
+            #print med,visDataMin,len(vertsInPixelIR[l][s]),imData[0][l][s]
+            if len(vertsInPixelVis[l][s])>0:#med>visDataMin:# and imData[0][l][s]>0:
                 VISSpec.append(spec)
                 VISvip.append(vertsInPixelVis[l][s])
-
     if extractSpec:
         with open('/data/VIMS/covims_0004/procdata/'+imageName+'_spec.pickle','w+') as han:
             pick.dump([VISSpec,IRSpec,VISvip,IRvip,sampleResolutionnot],han)
@@ -705,79 +676,70 @@ for imageName in imageNames:
 
 ################
 ####plot parameters
-cmap=pyl.get_cmap('jet')
+cmapToUse='YlOrRd' #jet
 
-generateMeanSpectra=True
+generateMeanSpectra=False
 dumpingRegions=False
-showMapOverlay=True
+saveMap=False
 showBinaryColours=False
 showContours=True
+showMap=True
 showJason=False
 showScatter=False
 showShape=False
 saveMovie=False
-includeMedLow=False
+includeMedLow=True
 threeColour=False
 doLineProfile=True
 
+cmap=pyl.get_cmap(cmapToUse)
 
 numContours=25
 if includeMedLow: minPix=1
 else: minPix=1
 
-if showMapOverlay:
+if showMap:
     if showJason:
         fs=(10,10)
-        alpha=0.4
+        alpha=1.
     else:
-        fs=(15,20)
-        alpha=0.4
+        fs=(10,10)
+        alpha=1.
 else:
     fs=(15,10)
-    alpha=0.8
+    alpha=1.
 
 
-whichRes='high'
+whichRes='low'
 
 if whichRes=='high':
     #high res
     resLow=0
-    resHigh=45.#18.1
+    resHigh=20.
     title='High Resolution, <16 km/pix'
 elif whichRes=='med':
     #med res
-    resLow=27.5#18.1
-    resHigh=28
+    resLow=20.
+    resHigh=50.
     title='Medium Resolution, 22>r>16 km/pix'
 elif whichRes=='low':
     #low res
-    resLow=28
+    resLow=50.
     resHigh=100
     title='Low Resolution, >22 km/pix'
-elif whichRes=='medHigh':
-    resLow=0.
-    resHigh=20
-    title='Finer half, <%s km/pix'%(resHigh)
-elif whichRes=='medLow':
-    resLow=20.
-    resHigh=100
-    title='Coarser half, >%s km/pix'%(resLow)
-elif whichRes=='all':
-    resLow=-1.
-    resHigh=1.e6
-    title='All VIMS fits.'
 
 
-cMaxw=0.35#1.1
-cMinw=0.18
+#0.1 to 0.41 work well for the global map
+cMaxw=0.41
+cMinw=0.1
 cbTitlew='1.6+2 Water-ice Absorption'
 
-cMaxwb=0.81#1.1
-cMinwb=0.7
+cMaxwb=0.81
+cMinwb=0.64
 cbTitlewb='3 Water-ice Absorption'
 
-cMaxww=3.4
-cMinww=1.8
+cMaxww=0.5
+cMinww=0.07
 cbTitleww='Absorption Ratio'
 
 
@@ -794,13 +756,14 @@ extent=[-180,180,-90,90]
 
 
 if dumpingRegions:
-    dumpingSpectra=[[],[],[],[],[],[]]
+    dumpingSpectra=[[],[],[],[]]
 if generateMeanSpectra:
     whichSpecVis=[]
     whichSpecIR=[]
     for i in range(len(mids)):
         whichSpecVis.append([])
         whichSpecIR.append([])
+
 
     VISSpecs=[]
     IRSpecs=[]
@@ -828,29 +791,37 @@ if generateMeanSpectra:
     for i in range(len(whichSpecIR)):
         v=[]
         ir=[]
-        if len(whichSpecVis[i])>=1 and len(whichSpecIR[i])>=1:
+        noVisSpec=True
+        if len(whichSpecIR[i])>=1:
             for l in whichSpecVis[i]:
                 s=normVisSpec(VISSpecs[l])
                 v.append(s)
-            v=num.array(v)
+            if v<>[]:
+                v=num.array(v)
+                noVisSpec=False
+            else: v=[1.0]
             x=num.median(v)
             v/=x
             vs=[]
             for l in whichSpecVis[i]:
-                #pyl.plot(viswave,VISSpecs[l]/v[len(vs)])
-                vs.append(VISSpecs[l]*v[len(vs)])
-            vs=num.array(vs)
+                vs.append(VISSpecs[l]/v[len(vs)])
+            if vs<>[]:
+                vs=num.array(vs)
+            else:
+                vs=num.ones([1,len(viswave)]).astype('float')
+
+
             for l in whichSpecIR[i]:
                 s=normIRSpec(IRSpecs[l])
                 ir.append(s)
-
             ir=num.array(ir)
             x=num.median(ir)
             ir/=x
             irs=[]
             for l in whichSpecIR[i]:
                 #pyl.plot(irwave,IRSpecs[l]/ir[len(irs)])
-                irs.append(IRSpecs[l]*ir[len(irs)])
+                irs.append(IRSpecs[l]/ir[len(irs)])
+            #print 'Do double check that the way you are medianing these spectra is intelligent.'
 
             medVis=nanmean(num.array(vs))
             medVis/=normVisSpec(medVis)
@@ -866,6 +837,13 @@ if generateMeanSpectra:
             fullspec=num.concatenate([medVis[:86],medIR[w]])
             fullwave=num.concatenate([viswave[:86],irwave[w]])
 
+
+            #if len(irs)>=2:
+            #    pyl.plot(fullwave,fullspec)
+            #    pyl.plot(irwave,IRSpecs[0])
+            #    pyl.plot(irwave,IRSpecs[1])
+            #    pyl.show()
+            #    sys.exit()
             #take the median of water depths, not the water depth from the median spectrum
             nSpec=len(irs)
             wats=[]
@@ -874,25 +852,25 @@ if generateMeanSpectra:
                 (wat,watb)=specAnalysis.water(irwave,irs[l])
                 wats.append(wat)
                 watbs.append(watb)
-            #print nSpec,wats,watbs
-            wat,watb=num.median(wats),num.median(watbs)
-            #print specAnalysis.water(irwave,medIR)
-            oSlope=specAnalysis.oSlope(fullwave,fullspec)
-            dSlope=specAnalysis.dSlope(fullwave,fullspec)
 
-            if dumpingRegions:
-                if abs(wat-0.15)<0.03 and abs(watb-0.65)<0.015: #low
+            wat,watb=num.median(wats),num.median(watbs)
+
+            if not noVisSpec:
+                oSlope=specAnalysis.oSlope(fullwave,fullspec)
+                dSlope=specAnalysis.dSlope(fullwave,fullspec)
+            else:
+                oSlope,dSlope=-32768.,-32768.
+
+            if dumpingRegions and whichRes=='high':
+                if abs(wat-0.1)<0.03 and abs(watb-0.66)<0.015: #low
                     dumpingSpectra[0].append(num.copy(fullspec))
-                elif abs(wat-0.22)<0.01 and abs(watb-0.72)<0.01: #normLow
+                elif abs(wat-0.21)<0.03 and abs(watb-0.73)<0.03: #mid
                     dumpingSpectra[1].append(num.copy(fullspec))
-                elif abs(wat-0.26)<0.01 and abs(watb-0.76)<0.01: #normMid
+                elif abs(wat-0.30)<0.03 and abs(watb-0.78)<0.03: #high
                     dumpingSpectra[2].append(num.copy(fullspec))
-                elif abs(wat-0.33)<0.01 and abs(watb-0.79)<0.01: #normHigh
+                elif wat>0.37 and watb>0.77 and watb<0.82: #rich
                     dumpingSpectra[3].append(num.copy(fullspec))
-                elif abs(wat-0.29)<0.04 and abs(watb-0.825)<0.015: #weird
-                    dumpingSpectra[4].append(num.copy(fullspec))
-                elif wat>0.4: #high
-                    dumpingSpectra[5].append(num.copy(fullspec))
+
             #print wat
             #if abs(wat-.29)<0.05 and abs(watb-0.78)<0.03:
                 #pyl.clf()
@@ -908,7 +886,10 @@ if generateMeanSpectra:
                 pyl.plot(viswave[:86],junk[:86],lw=2)
                 pyl.plot(irwave,medIR,lw=2)
                 pyl.plot(fullwave,fullspec)
+
             avSpecs.append([fullspec,len(whichSpecVis[i]),len(whichSpecIR[i]),wat,watb,oSlope,dSlope])
+
+
         else:
             avSpecs.append([None,len(whichSpecVis[i]),len(whichSpecIR[i]),None,None,None,None])
 
@@ -919,24 +900,20 @@ if generateMeanSpectra:
     #sys.exit()
     #print plotted
 
-    if dumpingRegions:
+    if dumpingRegions and whichRes=='high':
         with open('WaterModelling/lowSpec_highres.pickle','w+') as outhan:
             pick.dump([fullwave,dumpingSpectra[0]],outhan)
-        with open('WaterModelling/normLowSpec_highres.pickle','w+') as outhan:
+        with open('WaterModelling/midSpec_highres.pickle','w+') as outhan:
             pick.dump([fullwave,dumpingSpectra[1]],outhan)
-        with open('WaterModelling/normMidSpec_highres.pickle','w+') as outhan:
-            pick.dump([fullwave,dumpingSpectra[2]],outhan)
-        with open('WaterModelling/normHighSpec_highres.pickle','w+') as outhan:
-            pick.dump([fullwave,dumpingSpectra[3]],outhan)
-        with open('WaterModelling/weirdSpec_highres.pickle','w+') as outhan:
-            pick.dump([fullwave,dumpingSpectra[4]],outhan)
         with open('WaterModelling/highSpec_highres.pickle','w+') as outhan:
-            pick.dump([fullwave,dumpingSpectra[5]],outhan)
+            pick.dump([fullwave,dumpingSpectra[2]],outhan)
+        with open('WaterModelling/richSpec_highres.pickle','w+') as outhan:
+            pick.dump([fullwave,dumpingSpectra[3]],outhan)
     with open(whichRes+'_avSpecs.pickle','w+') as han:
         pick.dump(avSpecs,han)
     pyl.show()
-    #sys.exit()
-
+    #exit()
+    sys.exit()
 avSpecs={}
 with open('high_avSpecs.pickle') as han:
     avSpecs['high']=pick.load(han)
@@ -957,7 +934,8 @@ for k in avSpecs:
         specs[k].append(avSpecs[k][i][0])
         numVisSamps[k].append(avSpecs[k][i][1])
         numIRSamps[k].append(avSpecs[k][i][2])
-        if avSpecs[k][i][3]==None or avSpecs[k][i][1]<minPix and avSpecs[k][i][2]<minPix:
+        #avSpecs.append([fullspec,len(whichSpecVis[i]),len(whichSpecIR[i]),wat,watb,oSlope,dSlope])
+        if avSpecs[k][i][3]==None or avSpecs[k][i][2]<minPix or not isValidSpecValues(avSpecs[k][i]):
             waterDepths[k].append(-32768.)
             boundWaterDepths[k].append(-32768.)
             oSlopes[k].append(-32768.)
@@ -976,20 +954,28 @@ for k in avSpecs:
     dSlopes[k]=num.array(dSlopes[k])
 
 
-
 if showScatter:
     elevation=(mids[:,0]**2+mids[:,1]**2+mids[:,2]**2)**0.5
-    w=num.where((waterDepths['high']>0.0)&(boundWaterDepths['high']<>-32768.)&(oSlopes['high']<>-32768.))#&(oSlopes['high']<0.02)&(dSlopes['high']<>-32768.))
+    w=num.where((waterDepths['high']<>-32768.)&(boundWaterDepths['high']<>-32768.)&(oSlopes['high']<>-32768.))#&(oSlopes['high']<0.02)&(dSlopes['high']<>-32768.))
 
+
+    ww=num.where(albedos[w]>=0.06)
+    pyl.scatter(albedos[w][ww],waterDepths['high'][w][ww],alpha=0.1,c='k')
+    pyl.xlabel('Visual Albedo')
+    pyl.ylabel('1.5+2~$\mu$m Absorption Depth')
+    pyl.show()
     #W=num.where((waterDepths['high'][w]<0.34)&(boundWaterDepths['high'][w]>0.75))
     #pyl.scatter(lonsNotMod[w][W],lats[w][W])
     #pyl.show()
-        
 
-    pyl.scatter(waterDepths['high'][w],boundWaterDepths['high'][w])
-    x=num.array([0.1,0.4])
-    y=0.55+0.6*x
+
+
+    pyl.scatter(waterDepths['high'][w],boundWaterDepths['high'][w],c='k',alpha=0.1)
+    x=num.array([0.05,0.4])
+    y=0.6+0.6*x
     pyl.plot(x,y,'r-',lw=2)
+    delt=boundWaterDepths['high'][w]-(0.6*waterDepths['high'][w]+0.6)
+    pyl.scatter(waterDepths['high'][w],delt,c='r',alpha=0.2)
     pyl.xlabel('$1.55+2 \\mbox{ $\\mu$m}$ absorption')
     pyl.ylabel('$3 \\mbox{ $\\mu$m}$ absorption')
     pyl.show()
@@ -1110,21 +1096,21 @@ if showScatter:
 
 fullWaterDepths=waterDepths['high']*1.0
 if includeMedLow:
-    w=num.where(fullWaterDepths<0.0)
+    w=num.where(fullWaterDepths==-32768.)
     for i in w[0]:
         fullWaterDepths[i]=waterDepths['med'][i]
-    w=num.where(fullWaterDepths<0.0)
+    w=num.where(fullWaterDepths==-32768.)
     for i in w[0]:
         fullWaterDepths[i]=waterDepths['low'][i]
 
 fullBoundWaterDepths=boundWaterDepths['high']*1.0
 if includeMedLow:
-    w=num.where(fullBoundWaterDepths<0.0)
+    w=num.where(fullBoundWaterDepths==-32768.)
     for i in w[0]:
-        fullWaterDepths[i]=boundWaterDepths['med'][i]
-    w=num.where(fullBoundWaterDepths<0.0)
+        fullBoundWaterDepths[i]=boundWaterDepths['med'][i]
+    w=num.where(fullBoundWaterDepths==-32768.)
     for i in w[0]:
-        fullWaterDepths[i]=boundWaterDepths['low'][i]
+        fullBoundWaterDepths[i]=boundWaterDepths['low'][i]
 
 
 fulloSlopes=oSlopes['high']*1.0
@@ -1162,7 +1148,7 @@ lLCollection1.set_linewidths(0.0)
 
 colwb=num.zeros(len(fullBoundWaterDepths)).astype('float')
 alphaswb=colwb*0.0
-whichVertsToColour=num.where(fullBoundWaterDepths>0.6)
+whichVertsToColour=num.where(fullBoundWaterDepths<>-32768.)
 colwb[whichVertsToColour]=(fullBoundWaterDepths[whichVertsToColour]-cMinwb)/(cMaxwb-cMinwb)
 alphaswb[whichVertsToColour]=alpha
 
@@ -1176,20 +1162,19 @@ lLCollection4.set_linewidths(0.0)
 
 colww=num.zeros(len(fullBoundWaterDepths)).astype('float')
 alphasww=colww*0.0
-#wwRat=fullBoundWaterDepths/fullWaterDepths
-####wwRat[num.where(wwRat<0.5)]=0.001
+wwRat=fullWaterDepths/fullBoundWaterDepths
 #wwRat[num.where(num.isnan(wwRat))]=0.0
 #wwRat[num.where(( fullWaterDepths<0.1) | (fullBoundWaterDepths<0.6))]=0.0
 #whichVertsToColour=num.where(( fullWaterDepths>0.01)& (fullBoundWaterDepths>0.6))
 #colww[whichVertsToColour]=(wwRat[whichVertsToColour]-cMinww)/(cMaxww-cMinww)
-w=num.where((fullWaterDepths<0.35) & (fullBoundWaterDepths>0.75))
-colww[w]=0.6
-w=num.where((fullWaterDepths>0.35))
-colww[w]=0.95
-w=num.where(fullWaterDepths<0.19)
+w=num.where((fullWaterDepths>0.36) & (fullBoundWaterDepths>0.75))
+colww[w]=1.
+w=num.where((fullWaterDepths<0.16))
 colww[w]=0.1
-w=num.where((fullWaterDepths>=0.19)&(fullWaterDepths<0.35)&(fullBoundWaterDepths>=0.65)&(fullBoundWaterDepths<0.75))
-colww[w]=0.5
+w=num.where((fullWaterDepths>=0.16)&(fullWaterDepths<0.26))
+colww[w]=0.4
+w=num.where((fullWaterDepths>=0.26)&(fullWaterDepths<0.36))
+colww[w]=0.7
 alphasww[whichVertsToColour]=alpha
 
 lLCollection5=PolyCollection(vivll[whichVertsToPlot],zorder=10)
@@ -1197,6 +1182,7 @@ collectionColoursww=cmap(colww)
 collectionColoursww[:,3]=alphasww
 #collectionColours[w][:,3]=0.0
 lLCollection5.set_facecolors(collectionColoursww[whichVertsToPlot])
+lLCollection5.set_linewidths(0.0)
 lLCollection5.set_linewidths(0.0)
 
 
@@ -1273,11 +1259,51 @@ if threeColour:
 
     if doLineProfile: sys.exit()
     
-if showShape or saveMovie:
-    if not saveMovie: pyl.ion()
+if showShape:
+    #if not saveMovie:
+    shapeFig=pyl.figure('Shape',figsize=(15,8))
+    shapeFig.subplots_adjust(hspace=0,wspace=0)
+    lonlon=num.array([0.,72.,144.,216.,288.])+35.
+    latlat=[35.,-35.]
+    for i in range(len(lonlon)):
+        for k in range(len(latlat)):
+            ax1=shapeFig.add_subplot(len(latlat),len(lonlon),
+                                     1+k*len(lonlon)+i,
+                                     projection='3d')
+            ax1.set_aspect('equal')
+            ax1.set_xlim(-120,120)
+            ax1.set_ylim(-120,120)
+            ax1.set_zlim(-120,120)
+            ax1.set_axis_bgcolor('0.0')
+            ax1.view_init(azim=0, elev=0)
+            ax1.set_axis_off()
+            pyl.title('H$_2$O Absorption',color='w')
+
+            poly3d=reshape(vertices,vertIndices,
+            lonlon[i],latlat[k],0.,
+            80.,-12.,0.)[1]
+
+            w=num.where((collectionColoursw[:,0]==1.)&(collectionColoursw[:,1]==1.))[0]
+            for j in w:
+                collectionColoursw[j]=num.array([0.05,0.05,0.05,1.0])
+            w=num.where((collectionColourso[:,0]==0.)&(collectionColourso[:,1]==0.)&(collectionColourso[:,2]==0.5))[0]
+            for j in w:
+                collectionColourso[j]=num.array([0.05,0.05,0.05,1.0])
+
+            collection=Poly3DCollection(poly3d,linewidths=1.0,facecolors='k',edgecolors=collectionColoursw)
+            collection.set_alpha(1.)
+            pylCollection1=ax1.add_collection3d(collection)
+
+    pyl.show()
+    sys.exit()
+
+if  saveMovie:
+    pyl.ion()
+
     shapeFig=pyl.figure('Shape',figsize=(10,8))
     shapeFig.subplots_adjust(hspace=0,wspace=0)
-    ax1=shapeFig.add_subplot(121,projection='3d')
+    #ax1=shapeFig.add_subplot(121,projection='3d')
+    ax1=shapeFig.add_subplot(111,projection='3d')
     ax1.set_aspect('equal')
     ax1.set_xlim(-120,120)
     ax1.set_ylim(-120,120)
@@ -1287,137 +1313,111 @@ if showShape or saveMovie:
     ax1.set_axis_off()
     pyl.title('H$_2$O Absorption',color='w')
 
-    
-    ax2=shapeFig.add_subplot(122,projection='3d')
-    ax2.set_aspect('equal')
-    ax2.set_xlim(-120,120)
-    ax2.set_ylim(-120,120)
-    ax2.set_zlim(-120,120)
-    ax2.set_axis_bgcolor('0.0')
-    ax2.view_init(azim=0, elev=0)
-    ax2.set_axis_off()
-    pyl.title('0.5 -- 0.7~$\\mu$m Slope',color='w')
-    
     poly3d=reshape(vertices,vertIndices,
-                   0.,0.,120.,
-                    0.,0.,0.)[1]
+    0,0,0,
+    0.,0.,0.)[1]
 
-    w=num.where((collectionColoursw[:,0]==0.)&(collectionColoursw[:,1]==0.)&(collectionColoursw[:,2]==0.5))[0]
-    for i in w:
-        collectionColoursw[i]=num.array([0.05,0.05,0.05,1.0])
+    w=num.where((collectionColoursw[:,0]==1.)&(collectionColoursw[:,1]==1.))[0]
+    for j in w:
+        collectionColoursw[j]=num.array([0.05,0.05,0.05,1.0])
     w=num.where((collectionColourso[:,0]==0.)&(collectionColourso[:,1]==0.)&(collectionColourso[:,2]==0.5))[0]
-    for i in w:
-        collectionColourso[i]=num.array([0.05,0.05,0.05,1.0])
+    for j in w:
+        collectionColourso[j]=num.array([0.05,0.05,0.05,1.0])
 
     collection=Poly3DCollection(poly3d,linewidths=1.0,facecolors=collectionColoursw,edgecolors=collectionColoursw)
     collection.set_alpha(1.)
     pylCollection1=ax1.add_collection3d(collection)
-    collection=Poly3DCollection(poly3d,linewidths=1.0,facecolors=collectionColourso,edgecolors=collectionColourso)
-    collection.set_alpha(1.)
-    pylCollection2=ax2.add_collection3d(collection)
 
-    if not saveMovie:
-        for i in range(0,45,15):
-            ax1.view_init(azim=i,elev=30.)
-            ax2.view_init(azim=i,elev=30.)
-            pyl.draw()
-    else:
-        #for animations
-        import matplotlib.animation as manimation
+    #for animations
+    import matplotlib.animation as manimation
 
-        FFMpegWriter = manimation.writers['ffmpeg']
-        metadata = dict(title='Phoebe Water-ice', artist='Matplotlib',
-            comment='Movie support!')
-        #30 FPS
-        writer = FFMpegWriter(fps=30, metadata=metadata,bitrate=2400)
-        azims=num.arange(0,360*4,1)-45.
-        elevs=num.concatenate([num.ones(540)*30.,num.linspace(30,-30,360),num.ones(540)*-30.])
-        #15 FPS
-        #writer = FFMpegWriter(fps=15, metadata=metadata,bitrate=2400)
-        #azims=num.arange(0,360*4,2)-45.
-        #elevs=num.concatenate([num.ones(270)*30.,num.linspace(30,-30,180),num.ones(270)*-30.])
+    FFMpegWriter = manimation.writers['ffmpeg']#ffmpeg_file
+    metadata = dict(title='Phoebe Water-ice', artist='Matplotlib',
+    comment='Movie support!')
+    #30 FPS
+    writer = FFMpegWriter(fps=30, metadata=metadata,bitrate=2400)
+    azims=num.arange(0,360*4,1)-45.
+    elevs=num.concatenate([num.ones(540)*30.,num.linspace(30,-30,360),num.ones(540)*-30.])
+    #15 FPS
+    #writer = FFMpegWriter(fps=15, metadata=metadata,bitrate=2400)
+    #azims=num.arange(0,360*4,2)-45.
+    #elevs=num.concatenate([num.ones(270)*30.,num.linspace(30,-30,180),num.ones(270)*-30.])
 
-        ax1.view_init(azim=0,elev=30.)
-        ax2.view_init(azim=0,elev=30.)
-        ax1.view_init(azim=10,elev=30.)
-        ax2.view_init(azim=10,elev=30.)
+    ax1.view_init(azim=0,elev=30.)
+    ax1.view_init(azim=10,elev=30.)
 
-        print 'Creating an mpeg'
-        with writer.saving(shapeFig,"../Movies/Phoebe_test.mp4",300): #dpi specified here
-            for i in range(len(azims)):
-                print azims[i],elevs[i]
-                ax1.view_init(azim=azims[i],elev=elevs[i])
-                ax2.view_init(azim=azims[i],elev=elevs[i])
-                writer.grab_frame()
-            
-    sys.exit()
+    print 'Creating an mpeg'
+    stepped=0
+    with writer.saving(shapeFig,"/data/PhoebeFigures/Phoebe_test.mp4",300): #dpi specified here
+        for i in range(len(azims)):
+            print i+1,len(azims),azims[i],elevs[i]
+            ax1.view_init(azim=azims[i],elev=elevs[i])
+            writer.grab_frame()
+            stepped+=1
 
 
-    
+
 fig1=pyl.figure(3,figsize=fs)
-fig1.subplots_adjust(hspace=0)
+fig1.subplots_adjust(hspace=0,top=0.99,bottom=0.08)
 
-sp1=fig1.add_subplot(311)
-sp1.imshow(newImage,interpolation='nearest',cmap='gray',extent=extent,zorder=1)
+sp1=fig1.add_subplot(311,axisbg='black')
+#if showMap: sp1.imshow(newImage,interpolation='nearest',cmap='gray',extent=extent,zorder=1)
 sp1.add_collection(lLCollection1)
-ax1=pyl.scatter([-10,10],[100,100],c=num.array([cMinw,cMaxw]))
-cbar1 =fig1.colorbar(ax1,fraction=0.01)#, orientation='horizontal')
+mappable1 = pyl.cm.ScalarMappable(cmap = cmap)
+mappable1.set_array(num.array([cMinw,cMaxw]))
+cbar1 =fig1.colorbar(mappable1,fraction=0.01)#, orientation='horizontal')
 cbar1.set_label(cbTitlew)
 pyl.ylabel('Latitude (deg)')
 
-if showMapOverlay:
-    if showContours:
-        contours=pyl.contour(gridLong,gridLat,gridD-106,numContours,colors='w',zorder=5)
-        contours.levels = [nf(val) for val in contours.levels ]
-        # Label levels with specially formatted floats
-        if pyl.rcParams["text.usetex"]:
-            fmt = r'%r'
-        else:
-            fmt = '%r'
-        pyl.clabel(contours, contours.levels, inline=True, fmt=fmt, fontsize=14)
+if showContours:
+    contours=pyl.contour(gridLong,gridLat,gridD-106,numContours,colors='w',zorder=5)
+    contours.levels = [nf(val) for val in contours.levels ]
+    # Label levels with specially formatted floats
+    if pyl.rcParams["text.usetex"]:
+        fmt = r'%r'
+    else:
+        fmt = '%r'
+    pyl.clabel(contours, contours.levels, inline=True, fmt=fmt, fontsize=14)
 
-        #pyl.clabel(contours,inline=1,fontsize=10)
 
-sp2=fig1.add_subplot(312)#,sharex=sp1,sharey=sp1)
-sp2.imshow(newImage,interpolation='nearest',cmap='gray',extent=extent,zorder=1)
+sp2=fig1.add_subplot(312,axisbg='black')#,sharex=sp1,sharey=sp1)
+#if showMap: sp2.imshow(newImage,interpolation='nearest',cmap='gray',extent=extent,zorder=1)
 sp2.add_collection(lLCollection4)
-ax2=pyl.scatter([-10,10],[100,100],c=num.array([cMinwb,cMaxwb]))
-cbar2 =fig1.colorbar(ax2,fraction=0.01)#, orientation='horizontal')
+mappable2 = pyl.cm.ScalarMappable(cmap = cmap)
+mappable2.set_array(num.array([cMinwb,cMaxwb]))
+cbar2 =fig1.colorbar(mappable2,fraction=0.01)#, orientation='horizontal')
 cbar2.set_label(cbTitlewb)
 pyl.ylabel('Latitude (deg)')
 
-if showMapOverlay:
-    if showContours:
-        contours=pyl.contour(gridLong,gridLat,gridD-106,numContours,colors='w',zorder=5)
-        contours.levels = [nf(val) for val in contours.levels ]
-        # Label levels with specially formatted floats
-        if pyl.rcParams["text.usetex"]:
-            fmt = r'%r'
-        else:
-            fmt = '%r'
-        pyl.clabel(contours, contours.levels, inline=True, fmt=fmt, fontsize=14)
+if showContours:
+    contours=pyl.contour(gridLong,gridLat,gridD-106,numContours,colors='w',zorder=5)
+    contours.levels = [nf(val) for val in contours.levels ]
+    # Label levels with specially formatted floats
+    if pyl.rcParams["text.usetex"]:
+        fmt = r'%r'
+    else:
+        fmt = '%r'
+    pyl.clabel(contours, contours.levels, inline=True, fmt=fmt, fontsize=14)
 
-        #pyl.clabel(contours,inline=1,fontsize=10)
 
 sp3=fig1.add_subplot(313)#,sharex=sp1,sharey=sp1)
-sp3.imshow(newImage,interpolation='nearest',cmap='gray',extent=extent,zorder=1)
-sp3.add_collection(lLCollection5)
-ax3=pyl.scatter([-10,10],[100,100],c=num.array([cMinww,cMaxww]))
-cbar3 =fig1.colorbar(ax3,fraction=0.01)#, orientation='horizontal')
+if showMap: sp3.imshow(newImage,interpolation='nearest',cmap='gray',extent=extent,zorder=1,aspect='auto')
+#sp3.add_collection(lLCollection5)
+mappable3 = pyl.cm.ScalarMappable(cmap = cmap)
+mappable3.set_array(num.array([cMinww,cMaxww]))
+cbar3 =fig1.colorbar(mappable3,fraction=0.01)#, orientation='horizontal')
 cbar3.set_label(cbTitleww)
 
-if showMapOverlay:
-    if showContours:
-        contours=pyl.contour(gridLong,gridLat,gridD-106,numContours,colors='w',zorder=5)
-        contours.levels = [nf(val) for val in contours.levels ]
-        # Label levels with specially formatted floats
-        if pyl.rcParams["text.usetex"]:
-            fmt = r'%r'
-        else:
-            fmt = '%r'
-        pyl.clabel(contours, contours.levels, inline=True, fmt=fmt, fontsize=14)
+#if showContours:
+#    contours=pyl.contour(gridLong,gridLat,gridD-106,numContours,colors='w',zorder=5)
+#    contours.levels = [nf(val) for val in contours.levels ]
+#    # Label levels with specially formatted floats
+#    if pyl.rcParams["text.usetex"]:
+#        fmt = r'%r'
+#    else:
+#        fmt = '%r'
+#    pyl.clabel(contours, contours.levels, inline=True, fmt=fmt, fontsize=14)
 
-        #pyl.clabel(contours,inline=1,fontsize=10)
 
 if showJason:
     sp1.set_xlim(-20,80)
@@ -1428,13 +1428,16 @@ if showJason:
     sp3.set_ylim(-20,60)
 else:
     sp1.set_xlim(-180,180)
-    sp1.set_ylim(-56.9534,56.9534)
+    #sp1.set_ylim(-56.9534,56.9534)
+    sp1.set_ylim(-90,90)
     sp2.set_xlim(-180,180)
-    sp2.set_ylim(-56.9534,56.9534)
+    #sp2.set_ylim(-56.9534,56.9534)
+    sp2.set_ylim(-90,90)
     sp3.set_xlim(-180,180)
-    sp3.set_ylim(-56.9534,56.9534)
+    #sp3.set_ylim(-56.9534,56.9534)
+    sp3.set_ylim(-90,90)
 pyl.ylabel('Latitude (deg)')
 pyl.xlabel('Longitude (deg)')
 
-pyl.savefig('Phoebe_fullmap.tiff',bbox='tight')
+if saveMap: pyl.savefig('Phoebe_fullmap.tiff',bbox='tight')
 pyl.show()

@@ -47,7 +47,8 @@ def callShapeGen(r,vertices,vertIndices,ps_vis,ps_ir,inot,jnot,dXV,dYV,dZV,dXI,d
     steps+=1
     print steps,
 
-    (L_o_n,l_o_n,A_o_n,L_s,l_s,A_s,dn,oxv,oyv,oxi,oyi,ov,ova)=r
+    (L_o_n,l_o_n,A_o_n,L_s,l_s,dn,oxv,oyv,oxi,oyi,ov,ova)=r
+    A_s=0
 
     if abs(oxv)>1200. or abs(oyv)>1200. or oxv==num.inf or oxv==-num.inf or oyv==num.inf or oyv==-num.inf:
         #print oxv,oyv
@@ -58,7 +59,8 @@ def callShapeGen(r,vertices,vertIndices,ps_vis,ps_ir,inot,jnot,dXV,dYV,dZV,dXI,d
     if  dn<0 or ov<0 or ov>5 or ova<0 or ova>=360. or dn<0:
         #print dn,ov,ova
         return -num.inf
-    if L_o_n>=360. or L_o_n<0. or l_o_n>90. or l_o_n<-90. or A_o_n>=360. or A_o_n<0. or l_s>90. or l_s<-90. or L_s>=360. or L_s<0. or A_s<0 or A_s>=360.:
+    if L_o_n>=360. or L_o_n<0. or l_o_n>90. or l_o_n<-90. or A_o_n>=360. or A_o_n<0. or l_s>90. or l_s<-90. or L_s>=360. or L_s<0.:# or A_s<0 or A_s>=360.:
+        print L_o_n,l_o_n,A_o_n
         print L_s,l_s,A_s
         return -num.inf
 
@@ -147,29 +149,38 @@ def callShapeGenNoVel(r,vertices,vertIndices,ov,ova,ps_vis,ps_ir,inot,jnot,dXV,d
 
 ####data input
 
-imageName='2004163T121836_2004163T192848/cv1465667594_1'
-#imageName='2004163T193015_2004164T051726/cv1465680977_5'
+#imageName='2004163T121836_2004163T192848/cv1465673600_1'
+imageName='2004163T193015_2004164T051726/cv1465679932_1'
 
 #az_hacks
 azhacks={}
 azhacks['2004163T121836_2004163T192848/cv1465649746_1']=[0,0]
-
+azhacks['2004163T121836_2004163T192848/cv1465661929_1']=[-50,0]
+azhacks['2004163T121836_2004163T192848/cv1465662167_1']=[-40,0]
+azhacks['2004163T121836_2004163T192848/cv1465662631_1']=[-50,0]
+azhacks['2004163T121836_2004163T192848/cv1465662758_1']=[-50,0]
+azhacks['2004163T121836_2004163T192848/cv1465664774_1']=[-40,0]
+azhacks['2004163T121836_2004163T192848/cv1465665036_1']=[-30,0]
+azhacks['2004163T121836_2004163T192848/cv1465665440_1']=[-70,0]
+azhacks['2004163T121836_2004163T192848/cv1465665563_1']=[-70,0]
+azhacks['2004163T121836_2004163T192848/cv1465665771_1']=[-70,0]
+azhacks['2004163T121836_2004163T192848/cv1465666573_1']=[-50,0]
 azhacks['2004163T121836_2004163T192848/cv1465669944_1']=[-90,-90]
 azhacks['2004163T121836_2004163T192848/cv1465670212_1']=[-90,-30]
 azhacks['2004163T121836_2004163T192848/cv1465670650_1']=[-80,-20]
 azhacks['2004163T121836_2004163T192848/cv1465671285_1']=[0,-0]
 azhacks['2004163T121836_2004163T192848/cv1465671448_1']=[-70,-0]
 azhacks['2004163T121836_2004163T192848/cv1465671822_1']=[-60,-60]
-azhacks['2004163T121836_2004163T192848/cv1465672161_1']=[-30,-60]
+azhacks['2004163T121836_2004163T192848/cv1465672161_1']=[-50,-60]
 azhacks['2004163T121836_2004163T192848/cv1465673600_1']=[-60,-60]
 azhacks['2004163T193015_2004164T051726/cv1465677443_1']=[0,+50]
 azhacks['2004163T193015_2004164T051726/cv1465677670_1']=[0,+50]
 azhacks['2004163T193015_2004164T051726/cv1465678419_1']=[0,+30]
-azhacks['2004163T193015_2004164T051726/cv1465678911_1']=[0,190]
-azhacks['2004163T193015_2004164T051726/cv1465679413_1']=[0,+40]
-azhacks['2004163T193015_2004164T051726/cv1465679675_1']=[0,+60]
-azhacks['2004163T193015_2004164T051726/cv1465679932_1']=[0,+120]
-azhacks['2004163T193015_2004164T051726/cv1465680977_2']=[0,+80]
+azhacks['2004163T193015_2004164T051726/cv1465678911_1']=[30,190]
+azhacks['2004163T193015_2004164T051726/cv1465679413_1']=[30,+40]
+azhacks['2004163T193015_2004164T051726/cv1465679675_1']=[10,+60]
+azhacks['2004163T193015_2004164T051726/cv1465679932_1']=[-30,+120]
+azhacks['2004163T193015_2004164T051726/cv1465680977_2']=[20,+80]
 azhacks['2004163T193015_2004164T051726/cv1465680977_5']=[0,+80]
 azhacks['2004163T193015_2004164T051726/cv1465678419_1']=[30,70]
 try:az_hack_o,az_hack_s=azhacks[imageName]
@@ -202,14 +213,15 @@ doFitsNoVel=False
 doRandomVel=False
 produceMaps=False
 findRoughOffsets=False
-exitAfterFit=False
-singleFrame=True
-
+exitAfterFit=True
+singleFrame=False
+limitFitToNearInitial=True
+initLimit=5.
 
 if len(sys.argv)>1:
     doRandomVel=False
-    loadBestPoint=True
-    doFitsVel=False
+    loadBestPoint=False
+    doFitsVel=True
     exitAfterFit=True
     
 with pyf.open('/data/VIMS/covims_0004/procdata/%s_vis_mean_strpd.fits'%(imageName)) as han:
@@ -392,7 +404,7 @@ else:
     Xnot*=distancenot/CassIR[w][0][0]
     Ynot*=distancenot/CassIR[w][0][0]
     Znot*=distancenot/CassIR[w][0][0]
-#sampleResolutionnot=latLongObjIR[inot][jnot]['SampleResolution']/1000.
+
 
 #nominal values from the VIMS manual are 0.17*3 and 0.5 mrad
 if resRat<0.5:
@@ -414,6 +426,8 @@ long_s=latLongObjIR[inot][jnot]['SubSolarLongitude']
 lat_s=latLongObjIR[inot][jnot]['SubSolarLatitude']
 az_s=latLongObjIR[inot][jnot]['SubSolarAzimuth']+az_hack_s
 
+if limitFitToNearInitial:
+    initial=num.array([long_o_not,lat_o_not,az_o_not,long_s,lat_s])
 
 #velocities
 #offsetsVis=num.array([104.,291.]) #shift in vertical, shift in horizontal
@@ -474,27 +488,30 @@ if findRoughOffsets:
 if doFitsVel:
     x,y=0.,0.
     
-    nDim=13
+    nDim=12
     nWalkers=nDim*4
-    nBurn=100
-    nStep=100
+    nBurn=50
+    nStep=50
 
     steps=0
-    offWidth=20.
-    angWidth=10.
+    offWidthVis=sampResolutionsVis[argI]/1000.
+    offWidthIR=sampResolutionsIR[argI]/1000.
+    angWidth=1.5
     velWidth=0.1
     distanceWidth=distancenot*0.1
     
     r0=[]
-    widthArr=num.array([angWidth,angWidth,angWidth,angWidth,angWidth,angWidth,
-                        distanceWidth,offWidth,offWidth,offWidth,offWidth,velWidth,angWidth*10]) #when eyeballing at ~270 degrees, best fit was -38
+    widthArr=num.array([angWidth,angWidth,angWidth,angWidth,angWidth,
+                        distanceWidth,offWidthVis,offWidthVis,offWidthIR,offWidthIR,velWidth,angWidth*10]) #when eyeballing at ~270 degrees, best fit was -38
     for i in range(nWalkers):
-        entry=num.array([long_o_not,lat_o_not,az_o_not,long_s,lat_s,az_s,
+        entry=num.array([long_o_not,lat_o_not,az_o_not,long_s,lat_s,
                          distancenot,offsetsVis[0],offsetsVis[1],offsetsIR[0],offsetsIR[1],offsetVel,offsetVelAngle])
         entry+=sci.randn(nDim)*widthArr
         entry[len(entry)-2]=abs(entry[len(entry)-2])
+        #entry[0]=entry[0]%360
         entry[2]=entry[2]%360
-        entry[5]=entry[5]%360
+        #entry[3]=entry[3]%360
+        #entry[5]=entry[5]%360
         entry[len(entry)-1]=entry[len(entry)-1]%360. #making sure the offset velocity angle is between 0 and 360
         if entry[len(entry)-1]>360:
             sys.exit()
@@ -521,6 +538,7 @@ if doFitsVel:
     print sampler.lnprobability
 
     (bestPoint,goodSamps)=getFit('/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName))
+
     print bestPoint
     if exitAfterFit: sys.exit()
 
@@ -617,9 +635,22 @@ if doRandomVel:
 if loadBestPoint:# and imageName<>'2004163T193015_2004164T051726/cv1465680977_5':
 
     steps=0
-    (bestPoint,goodSamps)=getFit('/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName))
+    if limitFitToNearInitial:
+        print "Limiting to %s degrees of the SPICE angles.\n"%(initLimit)
+        (bestPoint,goodSamps)=getFit('/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName),initialAngles=initial,limit=initLimit)
+    else:
+        (bestPoint,goodSamps)=getFit('/data/VIMS/covims_0004/procdata/%s.fit_pickle'%(imageName))
     print bestPoint
-    [long_o_not,lat_o_not,az_o_not,long_s,lat_s,az_s,distancenot,offXV,offYV,offXI,offYI,offsetVel,offsetVelAngle,chi]=bestPoint
+    [long_o_not,lat_o_not,az_o_not,long_s,lat_s,distancenot,offXV,offYV,offXI,offYI,offsetVel,offsetVelAngle,chi]=bestPoint
+
+    ####
+    ##print 'REMOVE THIS HAK ONCE YOU HAV SOLVED THE PROBLEM'
+    #long_o_not,lat_o_not=175.0,43.0
+    #az_o_not=300.0
+    #long_s,lat_s=330.0,-23.0
+    #az_s=0.0
+    ####
+
     chi=callShapeGen(bestPoint[:len(bestPoint)-1],vertices,vertIndices,pixScaleVis,pixScaleIR,inot,jnot,deltaXVis,deltaYVis,deltaZVis,deltaXIR,deltaYIR,deltaZIR,lons,lats,pixelTimesVis,pixelTimesIR,imData,-90)
     print 'EMCEE best chi:',chi
 
@@ -644,8 +675,14 @@ if loadBestPoint:# and imageName<>'2004163T193015_2004164T051726/cv1465680977_5'
         print
     offsetsVis=num.array([offXV,offYV])
     offsetsIR =num.array([offXI,offYI])
+
+    sampleResolutionnot=pixScaleIR*distancenot/1000.
+    print ' IR fitted nominal sample resolution:',sampleResolutionnot
+    print
+
     
     
+
 
 
 
@@ -683,12 +720,15 @@ if loadBestPoint:# and imageName<>'2004163T193015_2004164T051726/cv1465680977_5'
                                                     pixelTimesVis,
                                                     imData[0],vis=False,az_adjust=-90)
 steps=0
-callShapeGen((long_o_not,lat_o_not,az_o_not,long_s,lat_s,az_s,distancenot,offsetsVis[0],offsetsVis[1],offsetsIR[0],offsetsIR[1],offsetVel,offsetVelAngle),vertices,vertIndices,pixScaleVis,pixScaleIR,inot,jnot,deltaXVis,deltaYVis,deltaZVis,deltaXIR,deltaYIR,deltaZIR,lons,lats,pixelTimesVis,pixelTimesIR,imData,-90)
+callShapeGen((long_o_not,lat_o_not,az_o_not,long_s,lat_s,distancenot,offsetsVis[0],offsetsVis[1],offsetsIR[0],offsetsIR[1],offsetVel,offsetVelAngle),vertices,vertIndices,pixScaleVis,pixScaleIR,inot,jnot,deltaXVis,deltaYVis,deltaZVis,deltaXIR,deltaYIR,deltaZIR,lons,lats,pixelTimesVis,pixelTimesIR,imData,-90)
 
 
 
 
 if produceMaps :#and loadBestPoint:
+
+
+
     with pyf.open('/data/VIMS/covims_0004/procdata/'+imageName+'_ir.fits') as shan:
         specData=shan[0].data
     if '2004163T193015_2004164T051726' in imageName:
@@ -752,9 +792,9 @@ if produceMaps :#and loadBestPoint:
                     #element0==1 we get bright red
                     #element1==1 we get bright green
                     #element2==1 we get bright navy blue
-                    if waterDepth[i,j]<0.22:
+                    if waterDepth[i,j]<0.12:
                         colours[vertsInPixelIR[i][j][k]][0]=1.0 #red
-                    elif waterDepth[i,j]<0.32:
+                    elif waterDepth[i,j]<0.38:
                         colours[vertsInPixelIR[i][j][k]][1]=1.0 #green
                     else:
                         colours[vertsInPixelIR[i][j][k]][2]=1.0 #blue

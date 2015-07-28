@@ -23,6 +23,7 @@ def getSpec(imData,l,s,cosmoCut=1.8,channelCut=256):
         
         m=num.median(spec[max(0,jj-3):min(255,jj+4)][ww])
         std=num.std(spec[max(0,jj-3):min(255,jj+4)][ww])
+        if std==0: std==1.
         #print jj,spec[jj],m,std,spec[max(0,jj-3):min(255,jj+4)][ww]
         if abs(spec[jj]-m)/std>cosmoCut:
             #print jj,spec[jj],m
@@ -49,6 +50,7 @@ def getSpecVis(imData,l,s,cosmoCut=1.75,channelCut=96):
         #if std==0:
         #    print spec
         #    sys.exit()
+        if std==0: std=1.
         if abs(spec[jj]-m)/std>cosmoCut:
             #print jj,spec[jj],m
             spec[jj]=m#num.nan
