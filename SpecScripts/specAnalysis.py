@@ -79,13 +79,8 @@ def water(wave,spec,returnSpec=False):
     d1=num.max((c1-num.nanmedian(spec[wf1]))/c1,0.0)
     d2=num.max((c2-num.nanmedian(spec[wf2]))/c2,0.0)
     d3=num.max((c3-num.nanmedian(spec[wf3]))/c3,0.0)
-    
-    #w=num.where((wave>=medWaves[0])&(wave<=medWaves[2]))
-    #featureSpec=spec[w]-f(wave[w])
-    #featureWave=wave[w]
-    #pyl.plot(wave[w],featureSpec)
-    #pyl.title(d1+d2)
-    #pyl.show()
+
+
     if returnSpec:
         www=num.where((wave>num.min(medWaves))&(wave<num.max(medWaves)))
         return(wave[www],spec[www]-f(wave[www]),d1+d2,d3)
