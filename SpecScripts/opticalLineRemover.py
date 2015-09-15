@@ -30,7 +30,7 @@ parser=optparse.OptionParser()
 
  
 imageName=args[0]#'2004163T121836_2004163T192848/cv1465665036_1'
-with pyf.open('/data/VIMS/covims_0004/procdata/'+imageName+'_vis.fits') as han:
+with pyf.open('/data/VIMS/covims_0004/procdata/'+imageName+'_vis.fits',ignore_missing_end=True) as han:
     imDat=han[0].data
     header=han[0].header
 
@@ -63,13 +63,14 @@ for i in range(B):
     if i<x0 or i>x1:
         emptyColumns.append(i)
 
-for j in range(N):
+if len(emptyRows)<>0:
+    for j in range(N):
+        for i in range(B):
+            meanStrip=num.median(imDat[j,:,i][emptyRows])
+            imDat[j,:,i]-=meanStrip
     for i in range(B):
-        meanStrip=num.median(imDat[j,:,i][emptyRows])
-        imDat[j,:,i]-=meanStrip
-for i in range(B):
-    meanStrip=num.median(meanDat[:,i][emptyRows])
-    meanDat[:,i]-=meanStrip
+        meanStrip=num.median(meanDat[:,i][emptyRows])
+        meanDat[:,i]-=meanStrip
 
 #emptyColumns=[]
 #scaled=getScaledImage(meanDat,A=A,B=B,contrast=2.)
