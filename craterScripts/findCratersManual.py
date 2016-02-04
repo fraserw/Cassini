@@ -7,7 +7,7 @@ from matplotlib.patches import Ellipse
 
 class ev:
 
-    def __init__(self,figure,sp,image):
+    def __init__(self,figure,sp,image,facecolor='b',edgecolor='r',alpha=0.55):
         self.patchList=[]
         #self.patchRads=[]
         self.sp=sp
@@ -18,6 +18,10 @@ class ev:
         self.press=None
 
         self.cratRad=5.
+
+        self.facecolor=facecolor
+        self.edgecolor=edgecolor
+        self.alpha=alpha
 
         cidbutton = figure.canvas.mpl_connect('button_press_event', self.onclick)
         cidpick = figure.canvas.mpl_connect('pick_event', self.onpick)
@@ -36,23 +40,39 @@ class ev:
             self.patchList[l-1].remove()
             self.patchList=self.patchList[:l-1]+self.patchList[l+1:]
 
-    def loadCraters(self,cratFile='manual.craters'):
+    def loadCraters(self,cratFile='/Users/fraserw/git/Cassini/craterScripts/manual.craters',convertToLatLong=False):
         with open(cratFile) as han:
             data=han.readlines()
+        try: (a,b,ccc)=self.image.shape
+        except: (a,b)=self.image.shape
         crats=[]
         for ii in range(len(data)):
             s=data[ii].split()
             (x,y,h)=(float(s[0]),float(s[1]),float(s[2]))
-            crats.append([x,y,h])
+            if not convertToLatLong:
+                crats.append([x,y,h,-32768,-32768,-32768])
+            else:
+                lat=90-180.*float(y)/a
+                long=-180+360*float(x)/b
+                r=360.*float(h)/b
+                crats.append([x,y,h,long,lat,r])
+
         crats=num.array(crats)
         arg=num.argsort(crats[:,2])
         crats=crats[arg]
         for ii in range(len(crats)):
-            (x,y,h)=crats[ii]
-            w=self.getWidthAdjust(y)*h
-            ellipse=Ellipse((x,y), w,h, angle=0.,
-            facecolor="blue", edgecolor="red",zorder=len(crats)-ii, linewidth=2, alpha=0.55,
-            picker=True)
+            (x,y,h,long,lat,r)=crats[ii]
+            if not convertToLatLong:
+                w=self.getWidthAdjust(y)*h
+                ellipse=Ellipse((x,y), w,h, angle=0.,
+                facecolor=self.facecolor, edgecolor=self.edgecolor,zorder=len(crats)-ii, linewidth=2, alpha=self.alpha,
+                picker=True)
+            else:
+                w=self.getWidthAdjust(y)*r
+                print long,lat,r,w
+                ellipse=Ellipse((long,lat), w,r, angle=0.,
+                facecolor=self.facecolor, edgecolor=self.edgecolor,zorder=len(crats)-ii, linewidth=2, alpha=self.alpha,
+                picker=True)
             self.patchList.append(ellipse)
             self.sp.add_patch(ellipse)
             pyl.draw()
@@ -73,7 +93,7 @@ class ev:
 
 
             ellipse=Ellipse((posx,posy), r,self.cratRad, angle=0.,
-            facecolor="blue", edgecolor="red",zorder=10, linewidth=2, alpha=0.55,
+            facecolor=self.facecolor, edgecolor=self.edgecolor,zorder=10, linewidth=2, alpha=self.alpha,
             picker=True)
             self.sp.add_patch(ellipse)
             self.patchList.append(ellipse)
@@ -99,7 +119,7 @@ class ev:
         if event.key=='control':
             self.ctrl_is_held=True
         if event.key in ['w','W']:
-            with open('manual.craters','w+') as han:
+            with open('/Users/fraserw/git/Cassini/craterScripts/manual.craters','w+') as han:
                 for ii in range(len(self.patchList)):
                     print >>han,self.patchList[ii].center[0],self.patchList[ii].center[1],self.patchList[ii].height
         if event.key=='D':
