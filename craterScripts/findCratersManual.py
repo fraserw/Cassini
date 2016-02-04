@@ -39,12 +39,19 @@ class ev:
     def loadCraters(self,cratFile='manual.craters'):
         with open(cratFile) as han:
             data=han.readlines()
+        crats=[]
         for ii in range(len(data)):
             s=data[ii].split()
             (x,y,h)=(float(s[0]),float(s[1]),float(s[2]))
+            crats.append([x,y,h])
+        crats=num.array(crats)
+        arg=num.argsort(crats[:,2])
+        crats=crats[arg]
+        for ii in range(len(crats)):
+            (x,y,h)=crats[ii]
             w=self.getWidthAdjust(y)*h
             ellipse=Ellipse((x,y), w,h, angle=0.,
-            facecolor="blue", edgecolor="red",zorder=10, linewidth=2, alpha=0.55,
+            facecolor="blue", edgecolor="red",zorder=len(crats)-ii, linewidth=2, alpha=0.55,
             picker=True)
             self.patchList.append(ellipse)
             self.sp.add_patch(ellipse)
@@ -177,14 +184,14 @@ class ev:
                 self.patchList[k].width=h*multi*self.getWidthAdjust(y0)
                 self.patchList[k].figure.canvas.draw()
 
+if __name__=="__main__":
+    fig=pyl.figure('Phoebe',figsize=(16,8))
+    sp1=fig.add_subplot(111)
 
-fig=pyl.figure('Phoebe',figsize=(16,8))
-sp1=fig.add_subplot(111)
+    image=mpimg.imread('/data/PhoebePDSMaps/PhoebeFull.png')
+    print image.shape
+    im=pyl.imshow(image,zorder=0)
 
-image=mpimg.imread('/data/PhoebePDSMaps/PhoebeFull.png')
-print image.shape
-im=pyl.imshow(image)
-
-ob=ev(fig,sp1,image)
-ob.loadCraters()
-pyl.show()
+    ob=ev(fig,sp1,image)
+    ob.loadCraters()
+    pyl.show()
