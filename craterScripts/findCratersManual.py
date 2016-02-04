@@ -7,7 +7,7 @@ from matplotlib.patches import Ellipse
 
 class ev:
 
-    def __init__(self,figure,sp,image,facecolor='b',edgecolor='r',alpha=0.55):
+    def __init__(self,figure,sp,image,facecolor='b',edgecolor='r',alpha=0.55,disconnect=False):
         self.patchList=[]
         #self.patchRads=[]
         self.sp=sp
@@ -23,11 +23,12 @@ class ev:
         self.edgecolor=edgecolor
         self.alpha=alpha
 
-        cidbutton = figure.canvas.mpl_connect('button_press_event', self.onclick)
-        cidpick = figure.canvas.mpl_connect('pick_event', self.onpick)
-        cidpress = figure.canvas.mpl_connect('key_press_event',self.on_key_press)
-        cidrelease = figure.canvas.mpl_connect('key_release_event',self.on_key_release)
-        cidmotion = figure.canvas.mpl_connect('motion_notify_event',self.onmotion)
+        if not disconnect:
+            cidbutton  = figure.canvas.mpl_connect('button_press_event', self.onclick)
+            cidpick    = figure.canvas.mpl_connect('pick_event', self.onpick)
+            cidpress   = figure.canvas.mpl_connect('key_press_event',self.on_key_press)
+            cidrelease = figure.canvas.mpl_connect('key_release_event',self.on_key_release)
+            cidmotion  = figure.canvas.mpl_connect('motion_notify_event',self.onmotion)
 
     def remPatch(self,l):
         if l==0:
@@ -49,33 +50,31 @@ class ev:
         for ii in range(len(data)):
             s=data[ii].split()
             (x,y,h)=(float(s[0]),float(s[1]),float(s[2]))
-            if not convertToLatLong:
-                crats.append([x,y,h,-32768,-32768,-32768])
-            else:
-                lat=90-180.*float(y)/a
-                long=-180+360*float(x)/b
-                r=360.*float(h)/b
-                crats.append([x,y,h,long,lat,r])
+            w=self.getWidthAdjust(y)*h
+            lat=90-180.*float(y)/a
+            long=-180+360*float(x)/b
+            r=360.*float(h)/b
+            R=self.getWidthAdjust(y)*r
+            crats.append([x,y,h,w,long,lat,r,R])
 
         crats=num.array(crats)
         arg=num.argsort(crats[:,2])
         crats=crats[arg]
         for ii in range(len(crats)):
-            (x,y,h,long,lat,r)=crats[ii]
+            (x,y,h,k,long,lat,r,R)=crats[ii]
             if not convertToLatLong:
-                w=self.getWidthAdjust(y)*h
-                ellipse=Ellipse((x,y), w,h, angle=0.,
+                ellipse=Ellipse((x,y), k,h, angle=0.,
                 facecolor=self.facecolor, edgecolor=self.edgecolor,zorder=len(crats)-ii, linewidth=2, alpha=self.alpha,
                 picker=True)
             else:
-                w=self.getWidthAdjust(y)*r
-                print long,lat,r,w
-                ellipse=Ellipse((long,lat), w,r, angle=0.,
+                #print x,y,h,k,long,lat,r,R
+                ellipse=Ellipse((long,lat), R,r, angle=0.,
                 facecolor=self.facecolor, edgecolor=self.edgecolor,zorder=len(crats)-ii, linewidth=2, alpha=self.alpha,
                 picker=True)
             self.patchList.append(ellipse)
             self.sp.add_patch(ellipse)
             pyl.draw()
+        return crats
 
     def getWidthAdjust(self,y):
         a=self.image.shape[0]
